@@ -1,0 +1,47 @@
+name: 'albion_target'
+version: '1.0.0'
+config-version: 2
+
+# Target-state dbt project for Albion General Insurance Group.
+# Supersedes the legacy Teradata BTEQ / SAS / Informatica estate. Every model
+# and test references (in comments) the legacy artifact it replaces.
+profile: 'albion_snowflake'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Single agreed Y2K pivot for the whole estate (replaces the 49/50/40 divergence
+# = DQR-052). See macros/albion_dates.sql and tests/README.md.
+vars:
+  # Sliding-window pivot: a two-digit year yy resolves to 2000+yy when that is
+  # <= the current calendar year, otherwise 1900+yy. This guarantees no derived
+  # date lands in the future and no DOB is shifted +100y (DQR-052).
+  y2k_pivot_mode: 'sliding'
+
+models:
+  albion_target:
+    staging:
+      +materialized: view
+      +schema: staging
+    domains:
+      +materialized: table
+      +schema: domains
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  albion_target:
+    +schema: raw
+    sii_lob_map:
+      +column_types:
+        product_cd: varchar(3)
+        sii_line_of_business: varchar(60)

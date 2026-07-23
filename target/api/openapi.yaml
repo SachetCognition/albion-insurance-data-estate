@@ -1,0 +1,258 @@
+openapi: 3.0.1
+info:
+  title: Albion Policy/Party/Claim API
+  description: |-
+    Target-state REST/JSON replacement for the frozen SOAP
+    PolicyInquiryService (api_legacy/soap/PolicyInquiryService.wsdl)
+    and its Oracle backend (api_legacy/plsql/pkg_policy_inquiry.sql).
+
+    Key contract changes vs the legacy rpc/encoded SOAP service:
+    * the overloaded 'customerRef' string is replaced by a typed
+      PartyIdentifier (party_id + explicit source scheme);
+    * dates are ISO-8601, not DD/MM/YYYY text;
+    * a single canonical active_policy_flag (with labelled variants);
+    * reads a fresh canonical domain store (dbt marts), not the
+      26h-stale ODS.
+  contact:
+    name: Albion Data Platform
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+tags:
+- name: Party
+  description: Replaces SOAP PolicyInquiryService.getPartyClaims; typed identifiers
+- name: Policy
+  description: Replaces SOAP PolicyInquiryService.getPolicySummary
+paths:
+  /policies/{policyNo}:
+    get:
+      tags:
+      - Policy
+      summary: Get full canonical policy by policy number (any format; normalised
+        once).
+      operationId: getPolicy
+      parameters:
+      - name: policyNo
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PolicyDto'
+  /policies/{policyNo}/summary:
+    get:
+      tags:
+      - Policy
+      summary: Policy summary — the modern replacement for get_policy_summary.
+      operationId: getPolicySummary
+      parameters:
+      - name: policyNo
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PolicySummaryDto'
+  /parties/{partyId}:
+    get:
+      tags:
+      - Party
+      summary: "Get a canonical party (typed identifier, masked NINO)."
+      operationId: getParty
+      parameters:
+      - name: partyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PartyDto'
+  /parties/{partyId}/claims:
+    get:
+      tags:
+      - Party
+      summary: Party claims — the modern replacement for get_party_claims (ISO dates).
+      operationId: getPartyClaims
+      parameters:
+      - name: partyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClaimDto'
+  /claims/{claimNo}:
+    get:
+      tags:
+      - Claim
+      summary: "Get a canonical claim by claim number (ISO dates, canonical fraud\
+        \ flag)."
+      operationId: getClaim
+      parameters:
+      - name: claimNo
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ClaimDto'
+components:
+  schemas:
+    PartyIdentifier:
+      type: object
+      properties:
+        partyId:
+          type: string
+        sourceScheme:
+          type: string
+          enum:
+          - POLARIS
+          - LEGACY_PAS
+          - APF_BANKING
+          - LIFE400
+          - PARTNER_LOYALTY
+        legacyClientNo:
+          type: integer
+          format: int64
+        apfCustomerId:
+          type: integer
+          format: int64
+    PolicyDto:
+      type: object
+      properties:
+        policyNo:
+          type: string
+        party:
+          $ref: '#/components/schemas/PartyIdentifier'
+        productCd:
+          type: string
+        productName:
+          type: string
+        brokerId:
+          type: string
+        channel:
+          type: string
+        inceptionDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date
+        policyStatus:
+          type: string
+        activePolicyFlag:
+          type: boolean
+        activeUw:
+          type: boolean
+        activeFinance:
+          type: boolean
+        activeClaims:
+          type: boolean
+        annualPremiumGbp:
+          type: number
+        iptRate:
+          type: number
+        paymentPlan:
+          type: string
+        uwYear:
+          type: integer
+          format: int32
+        sourceSystem:
+          type: string
+    PolicySummaryDto:
+      type: object
+      properties:
+        policyNo:
+          type: string
+        party:
+          $ref: '#/components/schemas/PartyIdentifier'
+        productCd:
+          type: string
+        policyStatus:
+          type: string
+        activePolicyFlag:
+          type: boolean
+        activeUw:
+          type: boolean
+        activeFinance:
+          type: boolean
+        activeClaims:
+          type: boolean
+        annualPremiumGbp:
+          type: number
+        inceptionDate:
+          type: string
+          format: date
+    PartyDto:
+      type: object
+      properties:
+        identifier:
+          $ref: '#/components/schemas/PartyIdentifier'
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        email:
+          type: string
+        postcode:
+          type: string
+        ninoMasked:
+          type: string
+    ClaimDto:
+      type: object
+      properties:
+        claimNo:
+          type: string
+        policyNo:
+          type: string
+        claimantParty:
+          $ref: '#/components/schemas/PartyIdentifier'
+        lossDate:
+          type: string
+          format: date
+        notificationDate:
+          type: string
+          format: date
+        causeCd:
+          type: string
+        claimStatus:
+          type: string
+        incurredAmt:
+          type: number
+        paidAmt:
+          type: number
+        outstandingReserve:
+          type: number
+        fraudFlag:
+          type: string

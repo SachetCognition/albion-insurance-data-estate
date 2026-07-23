@@ -1,0 +1,35 @@
+# Copy this file to ~/.dbt/profiles.yml (or set DBT_PROFILES_DIR to point here)
+# and fill in your Snowflake connection details. Secrets should come from
+# environment variables, never be committed.
+#
+# Supersedes the Teradata connection heritage (teradata/bteq/*.bteq .LOGON
+# ${TD_SERVER}/${TD_USERNAME}) and the SAS connect_teradata.sas macro.
+albion_snowflake:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      # Prefer key-pair or SSO auth in production; password shown for brevity.
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'TRANSFORMER') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'ALBION_WH') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'ALBION') }}"
+      # Raw landing schema for sources (see models/staging/_sources.yml).
+      schema: raw
+      threads: 8
+      client_session_keep_alive: false
+      query_tag: albion_dbt
+
+    # CI target used for `dbt parse` / compile without a live warehouse.
+    ci:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'dummy') }}"
+      user: "{{ env_var('SNOWFLAKE_USER', 'dummy') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD', 'dummy') }}"
+      role: TRANSFORMER
+      warehouse: ALBION_WH
+      database: ALBION
+      schema: raw
+      threads: 4
