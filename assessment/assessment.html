@@ -42,7 +42,8 @@ footer{padding:22px 40px;color:var(--mut);border-top:1px solid var(--brd);font-s
 <a href="#d1">1 · Feed / Pipeline Inventory</a>
 <a href="#d2">2 · Attribute-Overlap Matrix</a>
 <a href="#d3">3 · Glossary Reconciliation</a>
-<a href="#d4">4 · DQ Registry Diff</a></nav>
+<a href="#d4">4 · DQ Registry Diff</a>
+<a href="#d5">5 · Recommendations</a></nav>
   <main><section id="summary"><h2>Summary</h2><h1 id="albion-general-assess-phase-deliverables">Albion General — Assess Phase Deliverables</h1>
 <p>Written assessment of the Albion General Insurance Group legacy data estate
 (SachetCognition/albion-insurance-data-estate). Analysis/documentation only — no
@@ -62,6 +63,9 @@ numbers as evidence.</p>
 <li><strong><a href="04_dq_registry_diff.md">DQ registry diff</a></strong> — 7 registry rules vs. actual code;
    DQR‑014 (5 postcode variants), DQR‑007 (2+gap), NINO/AR‑118, Julian pivots 49/50/40,
    SII LoB drift.</li>
+<li><strong><a href="05_recommendations.md">Recommendations</a></strong> — canonical Party/Policy/Claim/Premium/
+   Reinsurance domains, deterministic survivorship rules, single earned-premium (365ths)
+   and active-policy (<code>policy_inforce</code>) definitions, with domain owner/steward mapping.</li>
 </ol>
 <p>An HTML rendering of all deliverables is provided at <strong><a href="assessment.html"><code>assessment.html</code></a></strong>.</p>
 <h2 id="headline-findings-with-pointers">Headline findings (with pointers)</h2>
@@ -1011,7 +1015,283 @@ governed <code>REF_DB.SII_LOB_MAP</code> consumed by both, with a cross‑engine
   check, earned‑premium tri‑recon, duplicate‑key skip, APF orphan drop, <strong>SII LoB drift</strong>.</li>
 <li>Highest‑risk findings: <strong>AR‑118 raw‑NINO join</strong> (DPO), <strong>SII LoB drift</strong> (regulatory),
   <strong>three Y2K pivots</strong> (data correctness), <strong>postcode 5‑variant sprawl</strong> (GDPR/matching).</li>
-</ul></section></main>
+</ul></section><section id="d5"><h2>5 · Recommendations</h2><h1 id="deliverable-5-recommendations-canonical-domains-governance">Deliverable 5 — Recommendations: Canonical Domains &amp; Governance</h1>
+<p>Target-state proposal derived from the Assess-phase findings (Deliverables 1–4). It
+defines five canonical data domains, per-domain survivorship rules that resolve the
+identity fragmentation, and single group standards for <strong>earned premium</strong> and
+<strong>active policy</strong>, each with an accountable owner. Every recommendation is traced to
+the evidence that motivates it.</p>
+<p>Ownership model used below (RACI-style):
+- <strong>Domain Owner (A)</strong> — accountable executive/function for the domain's definitions.
+- <strong>Data Steward (R)</strong> — responsible for day-to-day rules, reference data, DQ.
+- <strong>Consuming functions (C/I)</strong> — read the canonical product; may not redefine terms.</p>
+<hr />
+<h2 id="51-canonical-domains-overview">5.1 Canonical domains (overview)</h2>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Canonical key</th>
+<th>Replaces / unifies</th>
+<th>Owner (A)</th>
+<th>Steward (R)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Party</strong></td>
+<td><code>PARTY_UID</code> (surrogate)</td>
+<td><code>CUSTOMER_ID</code>, <code>PARTY_ID</code>, <code>CLIENT_NO</code>, <code>customer_ref</code>, <code>MKTG_CUST_ID</code>, life name+DOB</td>
+<td>Chief Data Officer</td>
+<td>MDM / Party Data Steward</td>
+</tr>
+<tr>
+<td><strong>Policy</strong></td>
+<td><code>POLICY_UID</code> (+ <code>policy_no_canonical</code>)</td>
+<td>POLARIS <code>ALB-XXX-9999999</code>, mainframe hyphen-stripped, bordereaux <code>AL/…</code>, life <code>PM…</code></td>
+<td>Policy Platform Owner</td>
+<td>Policy Data Steward</td>
+</tr>
+<tr>
+<td><strong>Claim</strong></td>
+<td><code>CLAIM_UID</code></td>
+<td>Guidewire + LEGACY_CLM (IMS)</td>
+<td>Claims Platform Owner</td>
+<td>Claims Data Steward</td>
+</tr>
+<tr>
+<td><strong>Premium</strong></td>
+<td><code>PREMIUM_TXN_UID</code> / <code>earned_premium</code> measure</td>
+<td>BTEQ 1/12, INFA 1/24, SAS 365ths, Life API</td>
+<td>Group Finance (ledger) + Group Actuarial (method)</td>
+<td>Premium Data Steward</td>
+</tr>
+<tr>
+<td><strong>Reinsurance</strong></td>
+<td><code>RI_RISK_UID</code> / <code>CEDED_UID</code></td>
+<td>broker bordereaux + treaty ceding</td>
+<td>Reinsurance / Capital Owner</td>
+<td>RI Data Steward</td>
+</tr>
+</tbody>
+</table>
+<p>Rationale for surrogate keys: no existing natural key spans the estate — six identity
+schemes (<code>02_attribute_overlap_matrix.md §2.1</code>), the manual <code>REF_DB.XREF_CLIENT_PARTY</code>
+(<code>teradata/ddl/03_insurance_source_tables.sql:96-104</code>) and the ~55%/keyless life book
+(<code>informatica/XML/wf_PARTY_MDM_SYNC.xml:7</code>; <code>teradata/ddl/04_life_db.sql:16</code>) make any
+source key unsafe as the spine.</p>
+<hr />
+<h2 id="52-party-domain">5.2 Party domain</h2>
+<p><strong>Canonical entity.</strong> <code>PARTY_UID</code> surrogate + <code>PARTY_ROLE</code> (banking-customer /
+policyholder / claimant / life-assured / marketing-contact). Source keys retained as
+<em>non-authoritative</em> cross-reference attributes, not as the spine.</p>
+<p><strong>Attributes (canonical):</strong> <code>full_name</code>, <code>dob</code> (ISO), <code>nino</code> (masked at rest — see DQ),
+<code>postcode</code> (single validator), <code>email</code> (single validator), plus <code>xref_*</code> columns holding
+each legacy id and its match confidence.</p>
+<p><strong>Survivorship rules (deterministic, auditable — replaces "most-recent-wins EXCEPT email longest-string"):</strong>
+1. <strong>Match</strong> — deterministic first: exact NINO, then exact (name + DOB + postcode). Fuzzy
+   only as a <em>candidate generator</em> feeding a suspect queue; fuzzy matches are <strong>never</strong>
+   auto-merged. (Fixes <code>wf_PARTY_MDM_SYNC.xml:7</code> fuzzy auto-attach and the 41k unworked
+   queue, <code>dq_rules/dq_rules_registry.csv:7</code>.)
+2. <strong>Attribute survivorship by source trust rank, not recency:</strong> identity/legal fields
+   (name, DOB, NINO) → POLARIS &gt; LEGACY_PAS &gt; LIFE400 &gt; APF &gt; marketing; contactability
+   (email, phone) → most-recently-<em>verified</em> (not longest string); address → most-recent
+   validated postcode. (Removes the undocumented longest-string email rule
+   <code>wf_PARTY_MDM_SYNC.xml:7</code>.)
+3. <strong>Confidence &amp; provenance stored per field</strong> (<code>source_system</code>, <code>match_method</code>,
+   <code>match_confidence</code>, <code>as_of</code>); every merge reversible.
+4. <strong><code>MKTG_CUST_ID</code> in scope</strong>: partner-loyalty parties must be matched into <code>PARTY_UID</code>
+   (name+email today only, <code>datastage/README.md:18-21</code>) — stops the 6th silo.
+5. <strong>Life book onboarding</strong>: <code>LIFE_POLICY_ID</code> parties matched via the same service, not a
+   lost DataStage job (<code>datastage/README.md:13-16</code>); unmatched → suspect queue with SLA.</p>
+<p><strong>Owner:</strong> CDO (A) · MDM/Party Steward (R) · Finance, UW, Claims, Marketing (C).</p>
+<hr />
+<h2 id="53-policy-domain">5.3 Policy domain</h2>
+<p><strong>Canonical entity.</strong> <code>POLICY_UID</code> surrogate + <code>policy_no_canonical</code> in one format,
+plus <code>policy_no_source</code> + <code>source_format</code>. Normalise the four formats
+(<code>02_attribute_overlap_matrix.md §2.3</code>): POLARIS <code>ALB-XXX-9999999</code>, mainframe
+hyphen-stripped (<code>data/inbound_feeds/PLCYMSTR_D260115.dat</code>), bordereaux <code>AL/PET-0001559</code>
+(<code>data/inbound_feeds/CLAIMS_BDX_BRK0007_202606.csv:2</code>), life <code>PM…</code>
+(<code>teradata/ddl/04_life_db.sql:5</code>). Re-keying happens <strong>once</strong> in ingestion, replacing the
+four scattered re-keys (<code>wf_REINSURANCE_BORDEREAUX_MONTHLY.xml:9-11</code>;
+<code>api_legacy/plsql/pkg_policy_inquiry.sql:28-29</code>).</p>
+<p><strong>Canonical attributes:</strong> <code>party_uid</code> (FK), <code>product_cd</code> (governed reference — retire
+<code>CAR/HSE</code> leakage, <code>glossary/underwriting_data_dictionary.csv:6</code>), dates in ISO (single
+Julian/century conversion, see §5.6), <code>annual_premium_gbp</code> (money normalised: pence
+implied-decimal <code>mainframe/copybooks/PLCYMSTR.cpy:16-17</code>, £-text
+<code>wf_REINSURANCE_BORDEREAUX_MONTHLY.xml:14-16</code>), <code>policy_status</code> (single domain),
+<code>inforce_flag</code> (§5.5).</p>
+<p><strong>Survivorship:</strong> one policy record per <code>POLICY_UID</code>; when POLARIS and LEGACY_PAS both
+carry a policy, POLARIS is system-of-record for policy terms, LEGACY_PAS for historic
+premium/paid-to-date; life policies remain a distinct product line under the same key
+space.</p>
+<p><strong>Owner:</strong> Policy Platform (A) · Policy Steward (R) · Finance, Actuarial, RI (C).</p>
+<hr />
+<h2 id="54-claim-domain">5.4 Claim domain</h2>
+<p><strong>Canonical entity.</strong> <code>CLAIM_UID</code> + <code>policy_uid</code>, <code>policyholder_party_id</code>,
+<code>claimant_party_id</code> <strong>kept distinct</strong> (fixes back-filled claimant caveat
+<code>glossary/claims_glossary.md:16-17</code>).</p>
+<p><strong>Canonical attributes:</strong> <code>date_of_loss</code> and <code>date_of_notification</code> as separate ISO
+fields (ends the "incurred in month" ambiguity <code>glossary/claims_glossary.md:6-9</code> and the
+US/UK loss-date bug INC0067812 <code>wf_CLAIMS_FNOL_INTRADAY.xml:9</code>,
+<code>teradata/bteq/05_stg_claims_summary.bteq:7-11</code>); <code>claim_status</code> single domain;
+<code>fraud_status</code> as a <strong>three-value</strong> domain <code>CONFIRMED/SUSPECTED/NONE</code> — never collapsed
+to Y/N (fixes <code>'S'</code>→<code>'N'</code> vs <code>'S'</code>→<code>'Y'</code> split <code>wf_CLAIMS_FNOL_INTRADAY.xml:15-17</code> vs
+<code>05_stg_claims_summary.bteq:44-47</code>); <code>fraud_referral_score</code> 0–1000 kept separate from
+banking <code>credit_default_probability</code> 0–1 (<code>§5.7</code>).</p>
+<p><strong>Survivorship:</strong> one operational and one analytical store must read the <strong>same</strong>
+harmonisation service (no divergent INFA/BTEQ mappings); Guidewire is SoR for open
+claims, LEGACY_CLM (IMS) for closed legacy history.</p>
+<p><strong>Owner:</strong> Claims Platform (A) · Claims Steward (R) · Actuarial, SIU, Finance (C).</p>
+<hr />
+<h2 id="55-active-policy-single-canonical-definition">5.5 Active-policy — single canonical definition</h2>
+<p><strong>Problem:</strong> four+ concurrent definitions (<code>03_glossary_reconciliation.md §3.2</code>):
+Finance <code>IF</code>+45-day collection (<code>glossary/finance_data_dictionary.csv:2</code>;
+<code>teradata/bteq/04_stg_policy_360.bteq:35-40</code>), UW <code>IF</code>/<code>RN</code>
+(<code>wf_POLICY_MASTER_DAILY.xml:48-50</code>), Claims any open claim
+(<code>glossary/claims_glossary.md:3-5</code>), copybook 88-level (<code>mainframe/copybooks/PLCYMSTR.cpy:24-27</code>),
+Life <code>AC/GR/RS</code> (<code>glossary/life_operations_glossary.md:5-8</code>).</p>
+<p><strong>Canonical:</strong> one <strong>structural</strong> flag + named derived measures — stop overloading "active".
+- <code>policy_inforce</code> = <code>policy_status IN ('IF','RN')</code> (P&amp;C) <strong>or</strong> <code>CONTRACT_STATUS IN ('AC','GR','RS')</code> (Life). <strong>Single source of the word "active".</strong>
+- <code>policy_paying</code> = <code>policy_inforce</code> AND a collection in the last 45 days <em>(Finance's measure, renamed).</em>
+- <code>policy_with_open_claim</code> = ≥1 OPEN/REOPENED claim <em>(Claims' measure, renamed).</em></p>
+<p><strong>Owner:</strong> Policy Platform owns <code>policy_inforce</code> (A); Finance owns <code>policy_paying</code>,
+Claims owns <code>policy_with_open_claim</code> (R for their derived measure). Board/regulatory
+in-force counts use <code>policy_inforce</code> only.</p>
+<hr />
+<h2 id="56-earned-premium-single-canonical-definition">5.6 Earned-premium — single canonical definition</h2>
+<p><strong>Problem:</strong> 1/12 (Finance BTEQ <code>teradata/bteq/06_stg_earned_premium.bteq:6-9</code>), 1/24
+(INFA <code>wf_BILLING_PREMIUM_RECON.xml:8</code>,<code>:10-14</code>), 365ths (Actuarial
+<code>sas/actuarial/06_reserving_triangles.sas:10-11</code>), plus Life API summed into a Group KPI
+(<code>glossary/life_operations_glossary.md:9-11</code>; <code>docs/known_issues_register.md:22</code>).</p>
+<p><strong>Canonical:</strong> <strong>daily pro-rata 365ths</strong> computed <strong>once</strong> in the warehouse as
+<code>earned_premium</code>, consumed unchanged by Finance close, QRT and Board packs. IPT from a
+single reference rate (<code>POLICY.IPT_RATE</code>), retiring the three hardcoded 12% copies
+(<code>wf_BILLING_PREMIUM_RECON.xml:17-19</code>; <code>teradata/bteq/06_stg_earned_premium.bteq:26</code>;
+<code>glossary/finance_data_dictionary.csv:7</code>). <strong>Life API stays a separate, labelled
+measure</strong> (<code>annualised_premium_in_force</code>) and is <strong>never</strong> added to an earned-premium KPI;
+any group premium KPI must show P&amp;C earned premium and Life API as distinct lines.</p>
+<p><strong>Owner:</strong> Group Actuarial owns the methodology (A/R); Group Finance owns ledger
+reconciliation and the IPT reference rate (R); the manual monthly XLS true-up
+(<code>sas/regulatory/08_solvency_ii_qrt_prep.sas:8-10</code>) is retired.</p>
+<hr />
+<h2 id="57-reinsurance-domain">5.7 Reinsurance domain</h2>
+<p><strong>Canonical entity.</strong> <code>RI_RISK_UID</code> (inward risk from bordereaux) and <code>CEDED_UID</code>
+(outward cession), both FK to <code>POLICY_UID</code>/<code>CLAIM_UID</code> via the canonical policy re-key.</p>
+<p><strong>Canonical attributes:</strong> amounts normalised from £-and-comma text once
+(<code>wf_REINSURANCE_BORDEREAUX_MONTHLY.xml:14-16</code>); <strong>single governed <code>REF_DB.SII_LOB_MAP</code></strong>
+consumed by <em>both</em> the QRT (SAS) and outward bordereau (INFA), ending the PET LoB drift
+(<code>sas/regulatory/08_solvency_ii_qrt_prep.sas:23-31</code> vs
+<code>wf_REINSURANCE_BORDEREAUX_MONTHLY.xml:19-22</code>), enforced by a cross-engine equality test;
+treaty reference data (quota-share terms) mastered centrally rather than in 14 hand-kept
+broker column maps (<code>wf_REINSURANCE_BORDEREAUX_MONTHLY.xml:7</code>).</p>
+<p><strong>Survivorship:</strong> one canonical <code>sii_lob</code> per product from the shared map; broker feed
+timeliness (e.g. BRK0007 habitual lateness <code>wf_REINSURANCE_BORDEREAUX_MONTHLY.xml:25</code>)
+handled by an ingestion SLA, not manual restart runbooks.</p>
+<p><strong>Owner:</strong> Reinsurance/Capital (A) · RI Steward (R) · Actuarial, Regulatory Reporting (C).</p>
+<hr />
+<h2 id="58-cross-cutting-survivorship-dq-standards-enablers">5.8 Cross-cutting survivorship &amp; DQ standards (enablers)</h2>
+<table>
+<thead>
+<tr>
+<th>Standard</th>
+<th>Canonical rule</th>
+<th>Retires</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Century/Julian</strong></td>
+<td>one shared date service, single pivot, ISO output</td>
+<td>pivots 49/50/40 (<code>wf_POLICY_MASTER_DAILY.xml:37</code>; <code>sas/macros/julian_to_date.sas:12</code>; <code>teradata/ddl/04_life_db.sql:22</code>)</td>
+</tr>
+<tr>
+<td><strong>Postcode</strong></td>
+<td>one validator service (repair-then-validate, case-insensitive)</td>
+<td>5 variants (<code>04_dq_registry_diff.md §4.2</code>)</td>
+</tr>
+<tr>
+<td><strong>Email</strong></td>
+<td>one validator applied on every ingest</td>
+<td>2 engines + banking gap (<code>dq_rules/dq_rules_registry.csv:2</code>)</td>
+</tr>
+<tr>
+<td><strong>NINO</strong></td>
+<td>mask/tokenise at ingest; analytics join on token, never raw</td>
+<td>AR-118 raw join (<code>sas/claims_fraud/05_claims_fraud_scoring.sas:32-38</code>)</td>
+</tr>
+<tr>
+<td><strong>DQ registry</strong></td>
+<td>registry is the SoR; every rule has exactly one implementation + a conformance test; unregistered rules removed or registered</td>
+<td>drift/duplication (<code>04_dq_registry_diff.md §4.7</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>DQ/registry owner:</strong> CDO office / Data Governance (A) · per-domain stewards (R).</p>
+<hr />
+<h2 id="59-owner-mapping-summary">5.9 Owner mapping (summary)</h2>
+<table>
+<thead>
+<tr>
+<th>Definition / asset</th>
+<th>Accountable owner</th>
+<th>Responsible steward</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PARTY_UID</code> + survivorship</td>
+<td>CDO</td>
+<td>MDM/Party Steward</td>
+</tr>
+<tr>
+<td><code>POLICY_UID</code> + policy re-key</td>
+<td>Policy Platform</td>
+<td>Policy Steward</td>
+</tr>
+<tr>
+<td><code>CLAIM_UID</code> + fraud/date domains</td>
+<td>Claims Platform</td>
+<td>Claims Steward</td>
+</tr>
+<tr>
+<td><code>earned_premium</code> (365ths) method</td>
+<td>Group Actuarial</td>
+<td>Premium Steward</td>
+</tr>
+<tr>
+<td>Earned-premium ledger recon + IPT rate</td>
+<td>Group Finance</td>
+<td>Premium Steward</td>
+</tr>
+<tr>
+<td><code>policy_inforce</code> (canonical active)</td>
+<td>Policy Platform</td>
+<td>Policy Steward</td>
+</tr>
+<tr>
+<td><code>policy_paying</code> / <code>policy_with_open_claim</code></td>
+<td>Finance / Claims</td>
+<td>resp. stewards</td>
+</tr>
+<tr>
+<td><code>REF_DB.SII_LOB_MAP</code> + RI domain</td>
+<td>Reinsurance/Capital</td>
+<td>RI Steward</td>
+</tr>
+<tr>
+<td>Shared date/postcode/email/NINO services + DQ registry</td>
+<td>Data Governance (CDO office)</td>
+<td>domain stewards</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Sequencing note:</strong> Party is the critical-path domain — Policy/Claim/Premium/RI all
+FK to <code>PARTY_UID</code>. Recommend delivering the Party MDM survivorship service and the
+canonical policy re-key first, then the single earned-premium/active-policy measures,
+before retiring LIFE400/DataStage (<code>01_feed_inventory.md §1.8</code>).</p>
+</blockquote></section></main>
 </div>
 <footer>Generated from the markdown deliverables in <code>assessment/</code> via
 <code>build_html.py</code>. No legacy source files were modified.</footer>

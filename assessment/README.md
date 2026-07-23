@@ -18,6 +18,9 @@ numbers as evidence.
 4. **[DQ registry diff](04_dq_registry_diff.md)** — 7 registry rules vs. actual code;
    DQR‑014 (5 postcode variants), DQR‑007 (2+gap), NINO/AR‑118, Julian pivots 49/50/40,
    SII LoB drift.
+5. **[Recommendations](05_recommendations.md)** — canonical Party/Policy/Claim/Premium/
+   Reinsurance domains, deterministic survivorship rules, single earned-premium (365ths)
+   and active-policy (`policy_inforce`) definitions, with domain owner/steward mapping.
 
 An HTML rendering of all deliverables is provided at **[`assessment.html`](assessment.html)**.
 

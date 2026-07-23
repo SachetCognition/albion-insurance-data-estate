@@ -18,6 +18,7 @@ SECTIONS = [
     ("d2", "2 · Attribute-Overlap Matrix", "02_attribute_overlap_matrix.md"),
     ("d3", "3 · Glossary Reconciliation", "03_glossary_reconciliation.md"),
     ("d4", "4 · DQ Registry Diff", "04_dq_registry_diff.md"),
+    ("d5", "5 · Recommendations", "05_recommendations.md"),
 ]
 
 CSS = """
