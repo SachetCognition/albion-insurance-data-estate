@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Albion General — Data Estate Assessment</title>
+<style>
+:root{--bg:#0f1420;--panel:#161d2e;--ink:#e7ecf5;--mut:#9aa7bd;--acc:#4da3ff;--brd:#26324a;--warn:#ffb454}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:28px 32px;border-bottom:1px solid var(--brd);background:linear-gradient(180deg,#182136,#0f1420)}
+header h1{margin:0 0 4px;font-size:22px}
+header p{margin:0;color:var(--mut);font-size:13px}
+.wrap{display:flex;gap:0;align-items:flex-start}
+nav{position:sticky;top:0;flex:0 0 240px;height:100vh;overflow:auto;padding:22px 16px;border-right:1px solid var(--brd);background:var(--panel)}
+nav a{display:block;padding:8px 12px;color:var(--mut);text-decoration:none;border-radius:8px;font-size:14px}
+nav a:hover{background:#1e2740;color:var(--ink)}
+main{flex:1;min-width:0;padding:28px 40px;max-width:1200px}
+section{margin-bottom:56px;scroll-margin-top:16px}
+h1,h2,h3{line-height:1.25}
+h2{font-size:20px;border-bottom:1px solid var(--brd);padding-bottom:6px;margin-top:0}
+h3{font-size:16px;color:var(--acc)}
+a{color:var(--acc)}
+code{background:#0c1220;border:1px solid var(--brd);border-radius:5px;padding:1px 5px;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#cfe0ff}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px;display:block;overflow-x:auto}
+th,td{border:1px solid var(--brd);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:#1c2740;color:var(--ink);position:sticky;top:0}
+tr:nth-child(even) td{background:#131a2b}
+blockquote{border-left:3px solid var(--acc);margin:12px 0;padding:2px 14px;color:var(--mut)}
+.badge{display:inline-block;background:#1c2740;border:1px solid var(--brd);color:var(--warn);border-radius:999px;padding:2px 10px;font-size:12px;margin-left:8px}
+footer{padding:22px 40px;color:var(--mut);border-top:1px solid var(--brd);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Albion General Insurance Group — Legacy Data Estate Assessment
+    <span class="badge">Assess phase</span></h1>
+  <p>Analysis &amp; documentation only. Every finding cites exact file paths and line numbers.</p>
+</header>
+<div class="wrap">
+  <nav><a href="#summary">Summary</a>
+<a href="#d1">1 · Feed / Pipeline Inventory</a>
+<a href="#d2">2 · Attribute-Overlap Matrix</a>
+<a href="#d3">3 · Glossary Reconciliation</a>
+<a href="#d4">4 · DQ Registry Diff</a></nav>
+  <main><section id="summary"><h2>Summary</h2><h1 id="albion-general-assess-phase-deliverables">Albion General — Assess Phase Deliverables</h1>
+<p>Written assessment of the Albion General Insurance Group legacy data estate
+(SachetCognition/albion-insurance-data-estate). Analysis/documentation only — no
+legacy source files were modified. Every finding cites exact file paths and line
+numbers as evidence.</p>
+<h2 id="deliverables">Deliverables</h2>
+<ol>
+<li><strong><a href="01_feed_inventory.md">Feed / pipeline inventory</a></strong> — all feeds across Informatica
+   (5 insurance + 3 GSS workflows), SAS (banking 01–04 + insurance 05–09), Teradata BTEQ
+   (01–06), mainframe (PLCYMSTR/CLMHIST/JCL) and AS/400 life (LIFEXTR/POLMSTEX),
+   reconciled with <code>docs/feed_inventory.md</code>, plus scheduling chaos and 6 gaps.</li>
+<li><strong><a href="02_attribute_overlap_matrix.md">Attribute-overlap matrix</a></strong> — key attributes ×
+   system, the six identity schemes, two partial crosswalks, ~55% MDM rate, per‑attribute
+   format divergence.</li>
+<li><strong><a href="03_glossary_reconciliation.md">Glossary reconciliation</a></strong> — term‑by‑term across the
+   4 (+Life) glossaries with conflicts flagged and canonical candidates.</li>
+<li><strong><a href="04_dq_registry_diff.md">DQ registry diff</a></strong> — 7 registry rules vs. actual code;
+   DQR‑014 (5 postcode variants), DQR‑007 (2+gap), NINO/AR‑118, Julian pivots 49/50/40,
+   SII LoB drift.</li>
+</ol>
+<p>An HTML rendering of all deliverables is provided at <strong><a href="assessment.html"><code>assessment.html</code></a></strong>.</p>
+<h2 id="headline-findings-with-pointers">Headline findings (with pointers)</h2>
+<ul>
+<li><strong>Identity fragmentation</strong> — 6 schemes, 2 partial crosswalks, 55% match, 41k suspects; keyless life book. (D2)</li>
+<li><strong>Rule duplication &amp; drift</strong> — postcode in 5 variants, NINO raw‑join bypass, 3 Y2K pivots, SII LoB drift. (D4)</li>
+<li><strong>Metric divergence</strong> — earned premium 1/12 vs 1/24 vs 365ths (+Life API in a Group KPI); 4 "active policy" definitions; 0–1 vs 0–1000 risk scales; fraud <code>'S'</code> mapped both ways. (D3)</li>
+<li><strong>Format chaos</strong> — ISO / DD‑MM text / Julian / YYMMDD / US‑parse bug; pence implied‑decimal; £‑text; 4 policy‑number formats. (D2)</li>
+<li><strong>Pipeline clone drift &amp; scheduling chaos</strong> — insurance BTEQ/SAS cloned from banking; quadruple scheduling; LIFE_POLICY_LOAD triple‑scheduled; 75‑min FTP gap; undocumented cross‑pipeline kick; nightly race; DQ‑bypassing actuarial feed. (D1)</li>
+<li><strong>Legacy consumption debt</strong> — 26h‑stale ODS behind a SOAP contract mixing two id schemes; 4th inline re‑key in PL/SQL. (D1/D2)</li>
+</ul>
+<h2 id="method-caveats">Method / caveats</h2>
+<p>Evidence collected by reading the repo directly (<code>README.md</code>, <code>docs/</code>, <code>glossary/</code>,
+<code>dq_rules/</code>, all pipeline code). Line numbers refer to the state of <code>main</code> at assessment
+time. Six documented gaps (missing POLARIS CDC export, missing CLMEXTR JCL, lost
+LIFE_POLICY_LOAD .dsx, missing GSS "Pseudossn" mask job, "nightly"=weekly DLYUPD, and
+status‑domain leakage) are listed in Deliverable 1 §1.8.</p></section><section id="d1"><h2>1 · Feed / Pipeline Inventory</h2><h1 id="deliverable-1-feed-pipeline-inventory">Deliverable 1 — Feed / Pipeline Inventory</h1>
+<p><strong>Scope:</strong> Every pipeline/feed across Informatica PowerCenter (insurance + legacy
+GSS), SAS (Premium Finance banking + insurance estate), Teradata BTEQ, mainframe
+COBOL/JCL, and the AS/400 life estate — cross-checked against <code>docs/feed_inventory.md</code>.</p>
+<p>All rows cite exact file paths and line numbers as evidence. Where the README or
+the governance inventory claims something the repo does not contain, it is flagged
+under <strong>Gaps &amp; discrepancies</strong>.</p>
+<hr />
+<h2 id="11-master-feed-register-reconciled-with-docsfeed_inventorymd">1.1 Master feed register (reconciled with <code>docs/feed_inventory.md</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Feed</th>
+<th>Source → Target</th>
+<th>Tech / orchestrator</th>
+<th>Schedule</th>
+<th>Format</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FD-001 PLCYMSTR</strong></td>
+<td>LEGACY_PAS (VSAM) → Teradata <code>STG_POLICY_MASTER</code> / <code>STG_POLICY_360</code> (+ <strong>separate actuarial copy</strong>)</td>
+<td>JCL <code>PLCYEXTR</code> + NDM (Connect:Direct) → INFA <code>wf_POLICY_MASTER_DAILY</code> → BTEQ <code>04</code></td>
+<td>Extract 02:40, NDM 03:00, INFA 03:15 (Control‑M <strong>ALB‑DWH‑0032</strong>), BTEQ 04:30</td>
+<td>Fixed width LRECL 80</td>
+<td><code>mainframe/jcl/PLCYEXTR.jcl:10</code>, <code>:17-26</code>; <code>mainframe/copybooks/PLCYMSTR.cpy</code>; <code>mainframe/feed_specs/PLCYMSTR_feed_spec.md:5-10</code>; <code>informatica/XML/wf_POLICY_MASTER_DAILY.xml:7</code>,<code>:79</code>,<code>:84-86</code>; <code>teradata/bteq/04_stg_policy_360.bteq:1-10</code>; <code>docs/feed_inventory.md:6</code></td>
+</tr>
+<tr>
+<td><strong>FD-002 POLARIS policy CDC</strong></td>
+<td>POLARIS PAS (Oracle) → <code>POLICY_ADMIN_DB</code></td>
+<td>Informatica CDC</td>
+<td>15 min</td>
+<td>Oracle CDC</td>
+<td><code>docs/feed_inventory.md:7</code> — <strong>no workflow export in <code>informatica/XML/</code></strong> (see Gaps)</td>
+</tr>
+<tr>
+<td><strong>FD-003 Guidewire CC events</strong></td>
+<td>Guidewire ClaimCenter → <code>CLAIMS_DB.CLAIM</code></td>
+<td>INFA <code>wf_CLAIMS_FNOL_INTRADAY</code></td>
+<td>Every 30 min 07:00–21:00 (Control‑M <strong>ALB‑DWH‑0047</strong>, cyclic)</td>
+<td>event/micro‑batch</td>
+<td><code>informatica/XML/wf_CLAIMS_FNOL_INTRADAY.xml:7</code>,<code>:28</code>; <code>orchestration/controlm/ALBION_DWH_DAILY.xml:13</code>; <code>docs/feed_inventory.md:8</code></td>
+</tr>
+<tr>
+<td><strong>FD-004 LEGACY_CLM</strong></td>
+<td>IMS mainframe → same INFA workflow (union)</td>
+<td>JCL extract per <code>CLMHIST.cpy</code> → <code>wf_CLAIMS_FNOL_INTRADAY</code> (union)</td>
+<td>Daily</td>
+<td>Fixed width</td>
+<td><code>mainframe/copybooks/CLMHIST.cpy:1-4</code>; union declared in mapping at <code>informatica/XML/wf_CLAIMS_FNOL_INTRADAY.xml:7</code>; <code>docs/feed_inventory.md:9</code> — <strong><code>CLMEXTR</code> JCL referenced but absent</strong> (see Gaps)</td>
+</tr>
+<tr>
+<td><strong>FD-005 Broker bordereaux</strong></td>
+<td>14 brokers (SFTP) → <code>REINSURANCE_DB</code></td>
+<td>ksh <code>bdx_transfer</code> + INFA <code>wf_REINSURANCE_BORDEREAUX_MONTHLY</code></td>
+<td>Monthly WD3 (cron <code>bdx_transfer</code> 06:00 WD1‑5)</td>
+<td>CSV, per‑broker columns, £‑text amounts</td>
+<td><code>informatica/scripts/bdx_transfer:9-18</code>; <code>informatica/XML/wf_REINSURANCE_BORDEREAUX_MONTHLY.xml:7</code>,<code>:25</code>; <code>data/inbound_feeds/CLAIMS_BDX_BRK0007_202606.csv:1-6</code>; <code>docs/feed_inventory.md:10</code></td>
+</tr>
+<tr>
+<td><strong>FD-006 Banking core</strong></td>
+<td>APF core banking → <code>STG_CUSTOMER_360</code> etc. → SAS 01–04</td>
+<td>BTEQ <code>01–03</code> + SAS <code>01–04</code></td>
+<td>Daily 02:00 (Control‑M <strong>ALB‑DWH‑0040</strong> <code>run_full_pipeline.sh</code>)</td>
+<td>Teradata</td>
+<td><code>teradata/bteq/01_stg_customer_360.bteq</code>; <code>sas/premium_finance/01–04</code>; <code>orchestration/controlm/ALBION_DWH_DAILY.xml:12</code>; <code>docs/feed_inventory.md:11</code></td>
+</tr>
+<tr>
+<td><strong>FD-007 Premium txns</strong></td>
+<td>Billing platform → Finance close / QRT</td>
+<td>BTEQ <code>06_stg_earned_premium</code> + INFA <code>wf_BILLING_PREMIUM_RECON</code></td>
+<td>BTEQ monthly WD2 06:00; INFA monthly WD1 22:00 (Control‑M <strong>ALB‑FIN‑0012</strong>)</td>
+<td>Teradata</td>
+<td><code>teradata/bteq/06_stg_earned_premium.bteq:1-10</code>; <code>informatica/XML/wf_BILLING_PREMIUM_RECON.xml:28</code>; <code>orchestration/controlm/ALBION_DWH_DAILY.xml:21</code>; <code>docs/feed_inventory.md:12</code></td>
+</tr>
+<tr>
+<td><strong>FD-008 Bureau scores</strong></td>
+<td>Credit bureau → SAS <code>03_risk_scoring</code> (banking only)</td>
+<td>sftp CSV</td>
+<td>Weekly</td>
+<td>CSV</td>
+<td><code>sas/premium_finance/03_sas_risk_scoring.sas:31-44</code>; <code>data/01_source_tables/customer_bureau_scores.csv</code>; <code>docs/feed_inventory.md:13</code></td>
+</tr>
+<tr>
+<td><strong>FD-009 GSS payroll estate</strong></td>
+<td>EHRP etc. → HR BI</td>
+<td>Legacy INFA folders <code>COMP_TIME</code>, <code>EHRP2BIIS</code>, <code>Pay_Calendar</code> + ksh transfer scripts</td>
+<td>Biweekly</td>
+<td>Oracle/flat file</td>
+<td><code>informatica/legacy_shared_services/XML/*</code>; <code>informatica/legacy_shared_services/scripts/*</code>; <code>docs/feed_inventory.md:14</code></td>
+</tr>
+<tr>
+<td><strong>FD-010 POLMSTEX</strong></td>
+<td>LIFE400 (AS/400) → DataStage <code>LIFE_POLICY_LOAD</code> → <code>LIFE_DB.LIFE_POLICY</code></td>
+<td>CL <code>LIFEXTR</code> + FTP (plaintext) → DataStage 9.1</td>
+<td>Nightly 23:30 (AS/400 ADDJOBSCDE); DS 00:45</td>
+<td>Fixed width, YYMMDD</td>
+<td><code>as400_life/extracts/LIFEXTR.clle</code>; <code>as400_life/feed_specs/POLMSTEX_feed_spec.md</code>; <code>datastage/README.md:13-16</code>; <code>teradata/ddl/04_life_db.sql</code>; <code>docs/feed_inventory.md:26</code></td>
+</tr>
+<tr>
+<td><strong>FD-011 Partner loyalty</strong></td>
+<td>Retail partners → RETAIL / ACTIVATIONSALES marts, Bouns_Program</td>
+<td>Delimited files → DataStage</td>
+<td>Weekly</td>
+<td>Delimited</td>
+<td><code>datastage/jobs/RETAIL_DATA_MART_Job.dsx</code>, <code>ACTIVATIONSALES_DATA_MART_Job.dsx</code>, <code>Bouns_Program_Job.dsx</code>; <code>datastage/README.md:18-21</code>; <code>docs/feed_inventory.md:27</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="12-informatica-powercenter-insurance-estate-informatica">1.2 Informatica PowerCenter — insurance estate (<code>informatica/</code>)</h2>
+<p><strong>5 workflow exports (<code>informatica/XML/</code>):</strong></p>
+<ol>
+<li>
+<p><strong><code>wf_POLICY_MASTER_DAILY</code></strong> — LEGACY_PAS policy master → Teradata staging.
+   - Source flat file per <code>PLCYMSTR.cpy</code>, LRECL 80: <code>wf_POLICY_MASTER_DAILY.xml:7-16</code>.
+   - Julian YYDDD → DATE, <strong>Y2K pivot 49</strong>: <code>:35-38</code>.
+   - Postcode DQ "variant A" (repairs space then regex): <code>:41-45</code>.
+   - Active flag per <strong>Underwriting</strong> definition (<code>IF</code>/<code>RN</code>): <code>:48-50</code>.
+   - <code>CLIENT_NO → PARTY_ID</code> crosswalk lookup <code>REF_DB.XREF_CLIENT_PARTY</code>, ~12% unmatched pass through NULL: <code>:53-58</code>.
+   - Control‑M <strong>ALB‑DWH‑0032</strong>, depends on NDM arrival: <code>:79</code>.</p>
+</li>
+<li>
+<p><strong><code>wf_CLAIMS_FNOL_INTRADAY</code></strong> — Guidewire CC ∪ LEGACY_CLM → <code>CLAIMS_DB.CLAIM</code>.
+   - Loss‑date bug: assumes Guidewire MM/DD/YYYY (INC0067812): <code>wf_CLAIMS_FNOL_INTRADAY.xml:9</code>.
+   - Fraud flag <code>'S'</code> → <strong><code>'N'</code></strong> here: <code>:15-17</code>.
+   - Cyclic 30 min, Control‑M <strong>ALB‑DWH‑0047</strong>: <code>:28</code>.</p>
+</li>
+<li>
+<p><strong><code>wf_PARTY_MDM_SYNC</code></strong> — POLARIS PARTY → MDM hub golden record.
+   - Survivorship: most‑recent‑update wins, <strong>except email = longest string</strong>: <code>wf_PARTY_MDM_SYNC.xml:7</code>.
+   - Email DQ "variant B" (lowercase + full regex): <code>:9-12</code>.
+   - NINO masking (marts only): <code>:15-17</code>.
+   - NAME+DOB fuzzy match to APF; 55% rate; 41k unworked suspects: <code>:7</code>, <code>:20</code>.
+   - Nightly 01:30 Control‑M <strong>ALB‑MDM‑0003</strong>; "must finish before <code>wf_POLICY_MASTER_DAILY</code> … relies on runtime luck": <code>:28</code> (race — see §1.7).</p>
+</li>
+<li>
+<p><strong><code>wf_BILLING_PREMIUM_RECON</code></strong> — written vs collected vs earned.
+   - <strong>Earned premium 1/24ths</strong>: <code>wf_BILLING_PREMIUM_RECON.xml:8</code>,<code>:10-14</code>.
+   - IPT 12% <strong>hardcoded</strong> (<code>POLICY.IPT_RATE</code> unused): <code>:17-19</code>.
+   - APF banking↔insurance join FK‑by‑convention, ~3% orphans dropped: <code>:22</code>.
+   - Monthly WD1 22:00 Control‑M <strong>ALB‑FIN‑0012</strong>: <code>:28</code>.</p>
+</li>
+<li>
+<p><strong><code>wf_REINSURANCE_BORDEREAUX_MONTHLY</code></strong> — broker bordereaux → outward Lloyd's bordereau.
+   - Re‑key <code>AL/MOT/9999999</code> → <code>ALB-MOT-9999999</code>: <code>wf_REINSURANCE_BORDEREAUX_MONTHLY.xml:9-11</code>.
+   - Strip <code>£</code> + commas from text amounts: <code>:14-16</code>.
+   - <strong>SII LoB map DRIFTED</strong> vs SAS (PET → 'Other motor' here): <code>:19-22</code> (see Deliverable 4).</p>
+</li>
+</ol>
+<p><strong>Supporting objects:</strong>
+- DQ mapplet <code>mplt_DQ_PARTY_STANDARDISE</code> (name/phone/postcode; references three postcode engines + a 4th GSS US‑format variant): <code>informatica/mapplets/mplt_DQ_PARTY_STANDARDISE.xml:6</code>.
+- Parameter files: <code>informatica/parameter_files/wf_BILLING_PREMIUM_RECON.par</code>, <code>wf_PARTY_MDM_SYNC.par</code>, <code>wf_POLICY_MASTER_DAILY.par</code>.
+- Scripts: <code>informatica/scripts/run_wf_policy_master</code> (pmcmd kick), <code>informatica/scripts/bdx_transfer</code> (ksh SFTP).</p>
+<h2 id="13-informatica-legacy-group-shared-services-informaticalegacy_shared_services">1.3 Informatica — legacy Group Shared Services (<code>informatica/legacy_shared_services/</code>)</h2>
+<p>Authentic rebranded PowerCenter 9.6 HR/payroll exports (FD-009). <strong>3 workflows:</strong>
+- <code>wf_COMPTIME</code> — folder <code>COMP_TIME</code>: <code>legacy_shared_services/XML/wf_GSS_COMPTIME.xml:5</code>.
+- <code>wf_EHRP2BIIS_UPDATE</code> — folder <code>EHRP2BIIS</code>: <code>wf_GSS_EHRP2BIIS_UPDATE.xml:5</code>.
+- <code>wf_Pay_Calendar</code> — folder <code>Pay_Calendar</code>: <code>wf_GSS_PAY_CALENDAR.xml:5</code>.</p>
+<p><strong>Transfer/utility scripts</strong> (<code>legacy_shared_services/scripts/</code>): <code>actstage_load</code>,
+<code>afps_transfer</code>, <code>archive_files</code>, <code>cdc_transfer</code>, <code>ehrp2biis_afterload.sql</code>,
+<code>ehrp2biis_preload</code>, <code>fda_transfer</code>, <code>nih_cpm_transfer</code>, <code>nih_les_transfer</code>,
+<code>nih_transfer_les</code>, <code>oig_transfer</code>, <code>remove_file</code>. All are ksh SFTP skeletons —
+<code>bdx_transfer</code> was cloned from <code>cdc_transfer</code> (<code>informatica/scripts/bdx_transfer:6</code>).
+Note plaintext credential handling in <code>ehrp2biis_preload:15-18</code> (<code>.pw</code>/<code>.use</code> files).
+These carry raw <strong>SSN</strong> as join keys (741 refs in <code>wf_GSS_EHRP2BIIS_UPDATE.xml</code>), the
+claimed ancestor of NINO masking (see Deliverable 4, DQR-021).</p>
+<h2 id="14-sas-estate">1.4 SAS estate</h2>
+<p><strong>Banking / Premium Finance (<code>sas/premium_finance/</code>):</strong> <code>01_sas_customer_segments</code>,
+<code>02_sas_txn_analytics</code>, <code>03_sas_risk_scoring</code>, <code>04_sas_data_products</code>, orchestrated by
+<code>run_sas_pipeline.sh</code>. Risk model emits <strong>RISK_SCORE 0–1 probability</strong> (<code>03_sas_risk_scoring.sas:122-139</code>).</p>
+<p><strong>Insurance (<code>sas/claims_fraud|actuarial|regulatory|customer/</code>):</strong> orchestrated by
+<code>sas/run_insurance_sas_pipeline.sh:16-20</code>.
+- <code>05_claims_fraud_scoring.sas</code> — fraud <strong>0–1000</strong> scale (<code>:10-13</code>,<code>:69-83</code>); joins <strong>raw NINO</strong> (AR‑118) <code>:32-38</code>.
+- <code>06_reserving_triangles.sas</code> — chain ladder; <strong>365ths</strong> earned premium (<code>:10-11</code>,<code>:30-33</code>); reads the <strong>separate actuarial mainframe copy</strong> <code>:5-6</code>,<code>:17</code>.
+- <code>07_ibnr_projection.sas</code> — IBNR = ultimate − reported; tail factor 1.05 hardcoded <code>:24-27</code>.
+- <code>08_solvency_ii_qrt_prep.sas</code> — QRT S.05.01/S.19.01; <strong>SII LoB map drifted</strong> vs Informatica <code>:11-14</code>,<code>:23-31</code>.
+- <code>09_policyholder_segmentation.sas</code> — <strong>cloned</strong> from banking <code>01_sas_customer_segments</code> (<code>:4-9</code>); dual segment labels for overlapping people.</p>
+<p><strong>Macros (<code>sas/macros/</code>):</strong> <code>check_uk_postcode</code>, <code>mask_nino</code>, <code>julian_to_date</code>,
+<code>validate_policy</code>, <code>validate_table</code>, <code>connect_teradata</code>, <code>log_step</code> (DQ engines — see Deliverable 4).</p>
+<h2 id="15-teradata-bteq-teradatabteq-ddl-teradataddl">1.5 Teradata BTEQ (<code>teradata/bteq</code>) &amp; DDL (<code>teradata/ddl</code>)</h2>
+<ul>
+<li><strong>Banking staging 01–03</strong> (<code>01_stg_customer_360</code>, <code>02_stg_txn_summary</code>, <code>03_stg_risk_factors</code>), run by <code>run_bteq_pipeline.sh</code>.</li>
+<li><strong>Insurance staging 04–06</strong> (<code>04_stg_policy_360</code>, <code>05_stg_claims_summary</code>, <code>06_stg_earned_premium</code>), run by <code>run_insurance_bteq.sh</code>.</li>
+<li><code>04</code> <strong>cloned from <code>01</code></strong> and diverged (<code>04_stg_policy_360.bteq:8-9</code>, CR‑2021‑088); Finance active flag <code>:35-40</code>; <strong>1/12ths</strong> earned <code>:44-49</code>; postcode DQ (requires space) <code>:51-57</code>; email DQ (<code>@</code> only) <code>:59-61</code>.</li>
+<li><code>05</code> loss‑date DD/MM/YYYY (INC0067812) <code>:7-11</code>,<code>:30</code>; fraud <code>'S'</code> → <strong><code>'Y'</code></strong> <code>:44-47</code>.</li>
+<li><code>06</code> <strong>1/12ths</strong> earned <code>:6-9</code>,<code>:27-29</code>; UW active filter (<code>IF</code>/<code>RN</code>) <code>:44</code>.</li>
+<li><strong>DDL:</strong> <code>00_source_tables</code> (banking), <code>01_staging_tables</code> (<code>STG_CUSTOMER_360/TXN_SUMMARY/RISK_FACTORS</code>), <code>02_data_product_tables</code> (4 banking products), <code>03_insurance_source_tables</code> (PARTY/POLICY/CLAIM/PREMIUM_TRANSACTIONS/BROKER/TREATY + <strong>manual <code>REF_DB.XREF_CLIENT_PARTY</code></strong> <code>03_insurance_source_tables.sql:96-104</code>), <code>04_life_db</code> (<code>LIFE_POLICY</code> + view <code>V_LIFE_POLICY</code> with <strong>pivot 40</strong> <code>04_life_db.sql:20-26</code>).</li>
+</ul>
+<h2 id="16-mainframe-mainframe-as400-life-as400_life">1.6 Mainframe (<code>mainframe/</code>) &amp; AS/400 life (<code>as400_life/</code>)</h2>
+<ul>
+<li><code>copybooks/PLCYMSTR.cpy</code> — policy master, postcode 88‑level first‑char‑alpha (PR4471) <code>:28-30</code>; active 88‑levels <code>:19-27</code>.</li>
+<li><code>copybooks/CLMHIST.cpy</code> — claim history; loss DDMMYYYY <code>:8-11</code>; fraud <code>'S'</code> no Guidewire equivalent <code>:20-23</code>.</li>
+<li><code>jcl/PLCYEXTR.jcl</code> — extract STEP010 <code>:10-15</code>; <strong>STEP020 REPRO the actuarial copy (CR‑2014‑311)</strong> <code>:17-26</code>.</li>
+<li><code>feed_specs/PLCYMSTR_feed_spec.md</code> — layout + known issues <code>:12-26</code>.</li>
+<li><code>as400_life/LIFE400/</code> — real ILE COBOL/CL/DDS admin system (POLMST, CLMPF, <code>POLDATA.cpy</code>). Life status domain <code>POLDATA.cpy:22-30</code>; dates 8‑digit YYYYMMDD on the AS/400 <code>:19</code>,<code>:56</code>,<code>:109</code> (truncated to YYMMDD only at extract).</li>
+<li><code>as400_life/extracts/LIFEXTR.clle</code> — nightly <code>CPYTOIMPF</code> + FTP plaintext; <strong>dates truncated to YYMMDD, pivot 40 agreed in a meeting, not in spec</strong> <code>:6-9</code>; <strong>no address/postcode — ADDRMST descoped, GDPR SAR needs 5250</strong> <code>:13-15</code>.</li>
+<li><code>as400_life/feed_specs/POLMSTEX_feed_spec.md</code> — layout; <code>PM…</code> 5th id scheme <code>:11</code>; INSNAME no party key <code>:16</code>,<code>:23-25</code>; INSDOB pivot‑40 ambiguity <code>:17</code>.</li>
+</ul>
+<h2 id="17-orchestration-known-issues-crosschecked">1.7 Orchestration &amp; known issues (cross‑checked)</h2>
+<ul>
+<li><strong>Four schedulers in play</strong>: Control‑M (<code>orchestration/controlm/ALBION_DWH_DAILY.xml</code>), cron (<code>orchestration/cron/crontab_prod.txt</code>), AS/400 ADDJOBSCDE (<code>LIFEXTR</code>/DLYUPD), and the DataStage Director scheduler (<code>datastage/README.md</code>).</li>
+<li><strong>Duplicate scheduling across Control‑M and cron</strong>: policy workflow (<code>crontab_prod.txt:3</code> ALSO <code>ALB‑DWH‑0032</code>), insurance SAS (<code>crontab_prod.txt:5</code> ALSO <code>ALB‑DWH‑0050</code>), and LIFE_POLICY_LOAD (<code>crontab_prod.txt:7</code>, below).</li>
+<li><strong>LIFE_POLICY_LOAD is triple‑scheduled</strong>: cron <code>crontab_prod.txt:7</code>, Control‑M <strong>ALB‑LIF‑0005</strong> <code>ALBION_DWH_DAILY.xml:17</code>, <strong>and</strong> the DS Director — explicitly noted <code>crontab_prod.txt:7</code>.</li>
+<li><strong>75‑minute FTP gap, no file‑watcher</strong> between AS/400 push (23:30) and DataStage: <code>ALBION_DWH_DAILY.xml:17-19</code>; upstream <code>LIFEXTR.clle:23-24</code>.</li>
+<li><strong>Undocumented cross‑pipeline kick</strong> inside a ksh script: <code>informatica/scripts/run_wf_policy_master:32-33</code> calls <code>run_insurance_bteq.sh</code> ("should be Control‑M's job… added temporarily 2022"); also flagged in Control‑M description <code>ALBION_DWH_DAILY.xml:7</code>.</li>
+<li><strong>Nightly race condition</strong> (MDM sync vs policy load): missing INCOND on <code>ALB‑MDM‑0003</code> <code>ALBION_DWH_DAILY.xml:8-10</code>; <code>wf_PARTY_MDM_SYNC.xml:28</code> ("relies on runtime luck"); <code>docs/architecture_overview.md:33-35</code>.</li>
+<li><strong>DQ‑bypassing duplicate actuarial feed</strong>: <code>PLCYEXTR.jcl:17-26</code> (REPRO) consumed by <code>06_reserving_triangles.sas:5-6</code>,<code>:17</code>; CR‑2014‑311 in <code>docs/known_issues_register.md:8</code> and <code>docs/feed_inventory.md:6</code>.</li>
+<li><strong>Scheduler ownership overlap</strong> (nobody owns <code>bdx_transfer</code>): <code>crontab_prod.txt:1-4</code>.</li>
+<li><strong>Plaintext FTP creds</strong>: <code>LIFEXTR.clle:23</code>; <code>run_wf_policy_master:9-11</code> (<code>pmpasswd</code> in <code>/etc/profile.d</code>).</li>
+</ul>
+<hr />
+<h2 id="18-gaps-discrepancies-repo-vs-docsfeed_inventorymd-readme-claims">1.8 Gaps &amp; discrepancies (repo vs. <code>docs/feed_inventory.md</code> / README claims)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Claim</th>
+<th>Repo reality</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>G1</td>
+<td>FD-002 POLARIS CDC is an active Informatica CDC feed</td>
+<td>No workflow export exists in <code>informatica/XML/</code> (only the 5 insurance workflows)</td>
+<td><code>docs/feed_inventory.md:7</code> vs <code>informatica/XML/</code> contents</td>
+</tr>
+<tr>
+<td>G2</td>
+<td>FD-004 LEGACY_CLM extracted "per CLMHIST.cpy" via JCL</td>
+<td>The <code>CLMEXTR</code> JCL is referenced but <strong>not present</strong>; only <code>PLCYEXTR.jcl</code> exists</td>
+<td><code>mainframe/copybooks/CLMHIST.cpy:3</code>; <code>docs/feed_inventory.md:9</code>; <code>mainframe/jcl/</code></td>
+</tr>
+<tr>
+<td>G3</td>
+<td>FD-011 has DataStage job exports</td>
+<td><code>LIFE_POLICY_LOAD</code> <strong>.dsx is lost</strong> — the load job that produces FD‑010's target is not in the repo</td>
+<td><code>datastage/README.md:13-16</code>; <code>docs/known_issues_register.md:17</code></td>
+</tr>
+<tr>
+<td>G4</td>
+<td>NINO masking descends from a GSS "Pseudossn" Informatica job</td>
+<td>The three GSS exports carry <strong>raw SSN as keys</strong>; no pseudonymisation/masking job is present among them</td>
+<td><code>sas/macros/mask_nino.sas:4-6</code>; SSN refs in <code>wf_GSS_EHRP2BIIS_UPDATE.xml</code> (741) with no mask transform</td>
+</tr>
+<tr>
+<td>G5</td>
+<td>DLYUPD lapse sweep is "nightly"</td>
+<td>Scheduled <strong>weekly</strong> via ADDJOBSCDE</td>
+<td><code>glossary/life_operations_glossary.md:14-15</code></td>
+</tr>
+<tr>
+<td>G6</td>
+<td>DQR-030 policy status domain <code>(IF,RN,LP,CN,EX)</code></td>
+<td>LEGACY_PAS emits retired <code>CAR/HSE</code> products and status <code>PD</code> (life legacy) dropped silently</td>
+<td><code>dq_rules/dq_rules_registry.csv:5</code>; <code>glossary/underwriting_data_dictionary.csv:6</code></td>
+</tr>
+</tbody>
+</table></section><section id="d2"><h2>2 · Attribute-Overlap Matrix</h2><h1 id="deliverable-2-attribute-overlap-matrix">Deliverable 2 — Attribute-Overlap Matrix</h1>
+<p>Matrix of key business attributes vs. each system/pipeline, with the identity-scheme
+fragmentation, the two partial crosswalks, the ~55% MDM match rate, and per-attribute
+format divergence. All cells cite file paths and line numbers.</p>
+<p>Legend: ✔ present · ✖ absent · ⚠ present but divergent format/semantics.</p>
+<hr />
+<h2 id="21-identity-schemes-six-competing-personcustomer-keys">2.1 Identity schemes — SIX competing person/customer keys</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Scheme</th>
+<th>System</th>
+<th>Where defined</th>
+<th>Crosswalked?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>CUSTOMER_ID</code> (BIGINT)</td>
+<td>APF core banking</td>
+<td><code>teradata/ddl/00_source_tables.sql:15</code></td>
+<td>via <code>PARTY.LEGACY_CUSTOMER_ID</code> (sparse)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>PARTY_ID</code> (<code>P</code>+7 digits)</td>
+<td>POLARIS PAS / MDM</td>
+<td><code>teradata/ddl/03_insurance_source_tables.sql:12</code></td>
+<td>hub key</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>CLIENT_NO</code> (numeric)</td>
+<td>LEGACY_PAS mainframe</td>
+<td><code>mainframe/copybooks/PLCYMSTR.cpy:11</code>; <code>03_insurance_source_tables.sql:98</code></td>
+<td>via manual <code>XREF_CLIENT_PARTY</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>customer_ref</code> (mixed)</td>
+<td>SOAP PolicyInquiryService</td>
+<td><code>api_legacy/plsql/pkg_policy_inquiry.sql:16-19</code></td>
+<td><strong>NONE — two schemes in one field</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>LIFE_POLICY_ID</code> (<code>PM…</code>)</td>
+<td>LIFE400 (AS/400)</td>
+<td><code>teradata/ddl/04_life_db.sql:5</code>; <code>as400_life/feed_specs/POLMSTEX_feed_spec.md:11</code></td>
+<td><strong>no person key</strong> — name+DOB fuzzy only</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>MKTG_CUST_ID</code> (5‑digit)</td>
+<td>DataStage partner loyalty</td>
+<td><code>datastage/README.md:18-21</code></td>
+<td><strong>never crosswalked</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-two-partial-crosswalks">The two partial crosswalks</h3>
+<ul>
+<li><strong><code>PARTY.LEGACY_CUSTOMER_ID</code></strong> — APF banking crosswalk, <strong>~55% populated, no RI</strong>: <code>teradata/ddl/03_insurance_source_tables.sql:6-8</code>,<code>:24</code>.</li>
+<li><strong><code>REF_DB.XREF_CLIENT_PARTY</code></strong> — <strong>manual</strong> (Excel‑upload heritage) LEGACY_PAS↔POLARIS map; neither side enforced; ~12% daily unmatched pass through NULL: <code>teradata/ddl/03_insurance_source_tables.sql:96-104</code>; lookup at <code>informatica/XML/wf_POLICY_MASTER_DAILY.xml:53-58</code>.</li>
+</ul>
+<h3 id="mdm-match-rate-keyless-books">MDM match rate &amp; keyless books</h3>
+<ul>
+<li>MDM survivorship (<code>wf_PARTY_MDM_SYNC</code>): match rate <strong>stuck at ~55%</strong>, <strong>41k unworked</strong> suspects in <code>MDM_SUSPECT_QUEUE</code>: <code>informatica/XML/wf_PARTY_MDM_SYNC.xml:7</code>; <code>dq_rules/dq_rules_registry.csv:7</code>; <code>docs/known_issues_register.md:14</code>.</li>
+<li>Life book matched by <strong>name+DOB fuzzy inside a lost‑source DataStage job</strong>, no suspect queue: <code>as400_life/feed_specs/POLMSTEX_feed_spec.md:23-25</code>; <code>teradata/ddl/04_life_db.sql:10</code>,<code>:16</code>; <code>datastage/README.md:13-16</code>.</li>
+<li><code>MKTG_CUST_ID</code> deduped ad hoc on name+email only: <code>datastage/README.md:20-21</code>.</li>
+</ul>
+<hr />
+<h2 id="22-attribute-systempipeline-matrix">2.2 Attribute × system/pipeline matrix</h2>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Banking (BTEQ 01–03 / SAS 01–04)</th>
+<th>POLARIS / INFA policy</th>
+<th>Mainframe LEGACY_PAS</th>
+<th>Claims (Guidewire+IMS / INFA / BTEQ 05)</th>
+<th>Bordereaux (INFA RI)</th>
+<th>LIFE400 / DataStage</th>
+<th>SOAP / PL/SQL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Party/customer id</strong></td>
+<td><code>CUSTOMER_ID</code> <code>00_source_tables.sql:15</code></td>
+<td><code>PARTY_ID</code> <code>03_…:12</code></td>
+<td><code>CLIENT_NO</code> <code>PLCYMSTR.cpy:11</code></td>
+<td><code>CLAIMANT_PARTY_ID</code> <code>03_…:49</code></td>
+<td>policy‑only (re‑keyed)</td>
+<td>none / <code>MATCHED_PARTY_ID</code> fuzzy <code>04_life_db.sql:16</code></td>
+<td><code>customer_ref</code> mixed <code>pkg_policy_inquiry.sql:19</code></td>
+</tr>
+<tr>
+<td><strong>Policy number</strong></td>
+<td>✖</td>
+<td><code>ALB-XXX-9999999</code> <code>03_…:30</code></td>
+<td>⚠ hyphens stripped <code>PLCYMSTR_feed_spec.md:15</code>; sample <code>ALBPET0003278</code> <code>PLCYMSTR_D260115.dat</code></td>
+<td><code>POLICY_NO</code> <code>03_…:48</code></td>
+<td>⚠ <code>AL/PET-0001559</code> <code>CLAIMS_BDX_…csv:2</code></td>
+<td>⚠ <code>PM0485738843</code> (life id) <code>04_life_db.sql:5</code></td>
+<td>re‑key inline (4th place) <code>pkg_policy_inquiry.sql:28-29</code></td>
+</tr>
+<tr>
+<td><strong>DOB / dates</strong></td>
+<td>ISO <code>DATE</code> <code>00_source_tables.sql:18</code></td>
+<td>⚠ <code>BIRTH_DT</code> DD/MM/YYYY <strong>text</strong> <code>03_…:16</code></td>
+<td>⚠ Julian YYDDD pivot 49 <code>PLCYMSTR.cpy:14-15</code></td>
+<td>⚠ <code>LOSS_DT</code> DD/MM/YYYY text; US‑parse bug <code>05_…bteq:7-11</code>, <code>wf_CLAIMS_FNOL_INTRADAY.xml:9</code></td>
+<td>⚠ DD/MM/YYYY <code>CLAIMS_BDX_…csv:2</code></td>
+<td>⚠ YYMMDD pivot 40 <code>POLMSTEX_feed_spec.md:5-7</code></td>
+<td>DD/MM/YYYY text out <code>pkg_policy_inquiry.sql:36</code></td>
+</tr>
+<tr>
+<td><strong>Premium / amount</strong></td>
+<td>✖ (balances)</td>
+<td><code>ANNUAL_PREMIUM_GBP</code> decimal <code>03_…:39</code></td>
+<td>⚠ pence implied‑decimal <code>PLCYMSTR.cpy:16-17</code></td>
+<td><code>INCURRED/PAID_AMT</code> decimal <code>03_…:54-55</code></td>
+<td>⚠ £‑and‑commas text <code>CLAIMS_BDX_…csv:2</code>, <code>wf_REINSURANCE…xml:14-16</code></td>
+<td>⚠ <code>MODAL_PREMIUM</code> implied 2dp <code>POLMSTEX_feed_spec.md:20</code></td>
+<td>decimal passthrough</td>
+</tr>
+<tr>
+<td><strong>Postcode</strong></td>
+<td>US <code>ZIP_CODE</code> <code>00_source_tables.sql:66</code></td>
+<td><code>POSTCODE</code> VARCHAR(10) <code>03_…:23</code></td>
+<td>⚠ no embedded space, weak check <code>PLCYMSTR.cpy:28-30</code></td>
+<td>(via party)</td>
+<td>broker‑specific</td>
+<td>✖ <strong>no postcode field</strong> (ADDRMST stranded) <code>LIFEXTR.clle:13-15</code></td>
+<td><code>postcode_dq_status</code> echoed <code>pkg_policy_inquiry.sql:25</code></td>
+</tr>
+<tr>
+<td><strong>NINO</strong></td>
+<td>✖ (SSN_HASH banking) <code>00_…:19</code></td>
+<td><code>NINO</code> CHAR(9) <strong>unmasked</strong> <code>03_…:17-18</code></td>
+<td>✖</td>
+<td>joined <strong>raw</strong> in SAS <code>05_…sas:32-38</code></td>
+<td>✖</td>
+<td>✖</td>
+<td>✖</td>
+</tr>
+<tr>
+<td><strong>Email</strong></td>
+<td>present, <strong>no validation</strong> <code>dq_rules_registry.csv:2</code></td>
+<td><code>EMAIL_ADDR</code> mixed case <code>03_…:19</code>; INFA regex <code>wf_PARTY_MDM_SYNC.xml:9-12</code></td>
+<td>✖</td>
+<td>✖</td>
+<td>✖</td>
+<td>✖</td>
+<td>✖</td>
+</tr>
+<tr>
+<td><strong>Risk score</strong></td>
+<td>RISK_SCORE <strong>0–1</strong> prob <code>03_sas_risk_scoring.sas:122-139</code></td>
+<td>✖</td>
+<td>✖</td>
+<td>FRAUD_SCORE <strong>0–1000</strong> <code>05_…sas:69-83</code></td>
+<td>✖</td>
+<td>✖</td>
+<td>✖</td>
+</tr>
+<tr>
+<td><strong>Fraud flag</strong></td>
+<td>✖</td>
+<td>✖</td>
+<td><code>S</code>=suspected <code>CLMHIST.cpy:20-23</code></td>
+<td><code>'S'</code>→<code>'N'</code> INFA <code>wf_CLAIMS_FNOL_INTRADAY.xml:15-17</code>; <code>'S'</code>→<code>'Y'</code> BTEQ <code>05_…bteq:44-47</code></td>
+<td>✖</td>
+<td>✖</td>
+<td>✖</td>
+</tr>
+<tr>
+<td><strong>Active‑policy flag</strong></td>
+<td>✖</td>
+<td>UW <code>IF/RN</code> <code>wf_POLICY_MASTER_DAILY.xml:48-50</code></td>
+<td>88‑levels <code>PLCYMSTR.cpy:19-27</code></td>
+<td>Claims: any open claim <code>claims_glossary.md:3-5</code></td>
+<td>✖</td>
+<td>Life <code>AC/GR/RS</code> <code>life_operations_glossary.md:5-8</code></td>
+<td>Finance flag echoed <code>pkg_policy_inquiry.sql:22-23</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="23-format-divergence-per-attribute-the-format-chaos">2.3 Format divergence per attribute (the "format chaos")</h2>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Formats observed</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Dates</strong></td>
+<td>ISO <code>YYYY-MM-DD</code>; DD/MM/YYYY‑as‑text; Julian <code>YYDDD</code>; <code>YYMMDD</code>; US MM/DD/YYYY parse bug</td>
+<td><code>00_source_tables.sql:18</code>; <code>03_insurance_source_tables.sql:16</code>,<code>:50</code>; <code>PLCYMSTR.cpy:14-15</code>; <code>POLMSTEX_feed_spec.md:5-7</code>; <code>wf_CLAIMS_FNOL_INTRADAY.xml:9</code></td>
+</tr>
+<tr>
+<td><strong>Y2K pivot years</strong></td>
+<td><strong>49</strong> (INFA), <strong>50</strong> (SAS), <strong>40</strong> (LIFE400/DataStage/V_LIFE_POLICY)</td>
+<td><code>wf_POLICY_MASTER_DAILY.xml:37</code>; <code>sas/macros/julian_to_date.sas:12</code>; <code>teradata/ddl/04_life_db.sql:22</code>; <code>dq_rules_registry.csv:8</code></td>
+</tr>
+<tr>
+<td><strong>Money</strong></td>
+<td>pounds decimal; pence implied‑decimal; £‑and‑commas text</td>
+<td><code>03_insurance_source_tables.sql:39</code>; <code>PLCYMSTR.cpy:16-17</code>; <code>wf_REINSURANCE_BORDEREAUX_MONTHLY.xml:14-16</code>; <code>CLAIMS_BDX_BRK0007_202606.csv:2</code></td>
+</tr>
+<tr>
+<td><strong>Policy number</strong></td>
+<td>POLARIS <code>ALB-XXX-9999999</code>; mainframe hyphen‑stripped <code>ALBPET0003278</code>; bordereaux <code>AL/PET-0001559</code>; life <code>PM0485738843</code></td>
+<td><code>PLCYMSTR_feed_spec.md:15</code>; <code>data/inbound_feeds/PLCYMSTR_D260115.dat:1</code>; <code>CLAIMS_BDX_BRK0007_202606.csv:2</code>; <code>04_life_db.sql:5</code></td>
+</tr>
+<tr>
+<td><strong>Postcode</strong></td>
+<td>5 handling variants (space‑repair / require‑space / case‑sensitive / first‑char‑alpha / none)</td>
+<td>see Deliverable 4, DQR‑014</td>
+</tr>
+<tr>
+<td><strong>Risk score</strong></td>
+<td>0–1 probability vs 0–1000 SIU — side‑by‑side, no rescale</td>
+<td><code>03_sas_risk_scoring.sas:122-139</code>; <code>05_claims_fraud_scoring.sas:10-13</code>; <code>claims_glossary.md:13-15</code></td>
+</tr>
+</tbody>
+</table></section><section id="d3"><h2>3 · Glossary Reconciliation</h2><h1 id="deliverable-3-glossary-reconciliation">Deliverable 3 — Glossary Reconciliation</h1>
+<p>Term-by-term reconciliation of the four conflicting business glossaries plus the
+Life Operations glossary, with each community's definition, the conflict flagged,
+and a canonical-definition candidate. All definitions cite file/line evidence.</p>
+<p>Sources:
+- Finance — <code>glossary/finance_data_dictionary.csv</code>
+- Underwriting — <code>glossary/underwriting_data_dictionary.csv</code>
+- Claims MI — <code>glossary/claims_glossary.md</code>
+- Actuarial — <code>glossary/actuarial_definitions.md</code>
+- Life Ops (Provident Mutual) — <code>glossary/life_operations_glossary.md</code></p>
+<hr />
+<h2 id="31-earned-premium-four-methodologies-a-group-kpi-error">3.1 Earned Premium — FOUR methodologies + a Group KPI error</h2>
+<table>
+<thead>
+<tr>
+<th>Community</th>
+<th>Definition</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Finance</td>
+<td>GWP straight‑line <strong>monthly (1/12ths)</strong> from inception</td>
+<td><code>finance_data_dictionary.csv:3</code>; BTEQ <code>06_stg_earned_premium.bteq:6-9</code>,<code>:27-29</code>; <code>04_stg_policy_360.bteq:44-49</code></td>
+</tr>
+<tr>
+<td>Billing recon (INFA)</td>
+<td><strong>1/24ths</strong> (assumes mid‑month inception)</td>
+<td><code>informatica/XML/wf_BILLING_PREMIUM_RECON.xml:8</code>,<code>:10-14</code></td>
+</tr>
+<tr>
+<td>Actuarial</td>
+<td>daily pro‑rata <strong>365ths</strong>; authoritative for reserving/pricing/SFCR</td>
+<td><code>actuarial_definitions.md:3-7</code>; <code>06_reserving_triangles.sas:10-11</code>,<code>:30-33</code></td>
+</tr>
+<tr>
+<td>Underwriting</td>
+<td>"not a UW measure" — but rate monitoring uses the actuarial 365ths</td>
+<td><code>underwriting_data_dictionary.csv:4</code></td>
+</tr>
+<tr>
+<td>Life Ops</td>
+<td>does not use earned premium; measures <strong>Annualised Premium In Force (API)</strong> = <code>MODAL_PREMIUM × PAY_FREQ</code></td>
+<td><code>life_operations_glossary.md:9-11</code>; view <code>04_life_db.sql:25</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conflicts:</strong>
+- Three concurrent earned‑premium methods differ by up to <strong>1.8% by product</strong> at year‑end (<code>actuarial_definitions.md:6-7</code>); month‑end reconciliation is a manual XLS (<code>06_stg_earned_premium.bteq:9</code>).
+- The QRT combines Finance 1/12ths premium with 365ths‑derived ultimates → combined ratio never ties, "true‑up" journal (<code>08_solvency_ii_qrt_prep.sas:8-10</code>).
+- <strong>Group Premium KPI adds Life API to P&amp;C earned premium</strong> — methodologically incompatible (<code>life_operations_glossary.md:10-11</code>; <code>docs/known_issues_register.md:22</code>).</p>
+<p><strong>Canonical candidate:</strong> single <strong>daily 365ths earned premium</strong> as the group standard
+(align Finance/Billing to actuarial), computed once in the warehouse and consumed by
+QRT and Board packs; keep <strong>API</strong> as a <em>distinct, separately‑labelled</em> life measure
+that is <strong>never summed</strong> into an earned‑premium KPI. Owner: Group Actuarial (methodology)
++ Finance MI (ledger reconciliation).</p>
+<hr />
+<h2 id="32-active-policy-four-concurrent-pc-definitions-a-5th-for-life">3.2 "Active Policy" — FOUR concurrent P&amp;C definitions + a 5th for Life</h2>
+<table>
+<thead>
+<tr>
+<th>Community</th>
+<th>Definition</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Finance</td>
+<td>status <code>IF</code> <strong>and</strong> a premium collection in last <strong>45 days</strong></td>
+<td><code>finance_data_dictionary.csv:2</code>; <code>04_stg_policy_360.bteq:35-40</code></td>
+</tr>
+<tr>
+<td>Underwriting</td>
+<td>status <code>IF</code> <strong>or</strong> <code>RN</code>, irrespective of collections</td>
+<td><code>underwriting_data_dictionary.csv:2</code>; <code>wf_POLICY_MASTER_DAILY.xml:48-50</code>; <code>06_stg_earned_premium.bteq:44</code></td>
+</tr>
+<tr>
+<td>Claims MI</td>
+<td>any policy with ≥1 OPEN/REOPENED claim, <strong>including cancelled</strong></td>
+<td><code>claims_glossary.md:3-5</code></td>
+</tr>
+<tr>
+<td>Mainframe (88‑levels)</td>
+<td><code>PLCY-ACTIVE</code> = <code>IF</code>/<code>RN</code> (UW view baked into copybook)</td>
+<td><code>mainframe/copybooks/PLCYMSTR.cpy:24-27</code></td>
+</tr>
+<tr>
+<td>Life Ops</td>
+<td><code>CNTRSTS in ('AC','GR','RS')</code>; Finance count only <code>AC</code> for group in‑force</td>
+<td><code>life_operations_glossary.md:5-8</code>; <code>04_life_db.sql:9</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conflict:</strong> four P&amp;C answers to the same question (Finance/UW/Claims + the copybook's
+UW‑baked 88‑level), plus a distinct life status domain that does not align to the P&amp;C
+domain. Unresolved since 2019 (<code>docs/known_issues_register.md:12</code>). Note the copybook
+even documents "DO NOT RECONCILE THESE TWO NUMBERS" (<code>PLCYMSTR.cpy:26-27</code>).</p>
+<p><strong>Canonical candidate:</strong> define <strong><code>policy_inforce</code></strong> = status <code>IF</code>/<code>RN</code> (or life <code>AC</code>)
+as the single structural flag, and express the others as <em>named derived measures</em>:
+<code>policy_paying</code> (Finance's collections test), <code>policy_with_open_claim</code> (Claims), and a
+mapped life status. Never overload the word "active". Owner: a cross‑community data
+council; structural flag owned by Policy Platform.</p>
+<hr />
+<h2 id="33-risk-fraud-score-scales-two-incompatible-scales-on-one-dashboard">3.3 Risk / Fraud score scales — two incompatible scales on one dashboard</h2>
+<table>
+<thead>
+<tr>
+<th>Community</th>
+<th>Scale</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>APF banking risk</td>
+<td><code>RISK_SCORE</code> <strong>0–1 probability</strong> of default</td>
+<td><code>03_sas_risk_scoring.sas:122-139</code>,<code>:168</code></td>
+</tr>
+<tr>
+<td>Claims SIU fraud</td>
+<td><code>FRAUD_SCORE</code> <strong>0–1000</strong>; referral ≥ 650</td>
+<td><code>05_claims_fraud_scoring.sas:10-13</code>,<code>:80-82</code>; <code>claims_glossary.md:13-15</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conflict:</strong> both surfaced side‑by‑side in the Qlik "Customer Risk" dashboard for
+overlapping customers with <strong>no rescaling</strong> (<code>05_claims_fraud_scoring.sas:11-13</code>;
+<code>docs/architecture_overview.md:27</code>).</p>
+<p><strong>Canonical candidate:</strong> keep the two scores as <em>distinct, explicitly‑named metrics</em>
+(<code>credit_default_probability</code> 0–1 and <code>fraud_referral_score</code> 0–1000) with a governed
+display rule forbidding them on a shared axis; if a blended view is needed, define a
+separate normalised <code>customer_risk_index</code>. Owner: MI/BI governance.</p>
+<hr />
+<h2 id="34-fraud-flag-s-mapped-opposite-ways">3.4 Fraud flag <code>'S'</code> — mapped opposite ways</h2>
+<table>
+<thead>
+<tr>
+<th>Pipeline</th>
+<th>Mapping of <code>'S'</code> (suspected)</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Informatica claims load</td>
+<td><code>'S'</code> → <strong><code>'N'</code></strong></td>
+<td><code>wf_CLAIMS_FNOL_INTRADAY.xml:15-17</code></td>
+</tr>
+<tr>
+<td>BTEQ claims staging</td>
+<td><code>'S'</code> → <strong><code>'Y'</code></strong></td>
+<td><code>05_stg_claims_summary.bteq:44-47</code></td>
+</tr>
+<tr>
+<td>Source (IMS copybook)</td>
+<td><code>'S'</code> = fraud‑suspected; Guidewire has no equivalent</td>
+<td><code>mainframe/copybooks/CLMHIST.cpy:20-23</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conflict:</strong> operational store (INFA) and analytical store (BTEQ) disagree for every
+<code>'S'</code> claim → fraud MI counts diverge; the ad‑hoc pack even measures the mismatch
+(<code>dq_rules/sql/dq_checks_claims.sql:17-22</code>).</p>
+<p><strong>Canonical candidate:</strong> preserve a <strong>three‑value domain</strong> end‑to‑end
+(<code>CONFIRMED</code>/<code>SUSPECTED</code>/<code>NONE</code>) rather than collapsing to Y/N; downstream consumers
+choose their own inclusion rule explicitly. Owner: Claims Platform + Claims MI.</p>
+<hr />
+<h2 id="35-other-reconciliation-items">3.5 Other reconciliation items</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Divergence</th>
+<th>Evidence</th>
+<th>Canonical candidate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Incurred / "in month"</strong></td>
+<td>Claims use <code>LOSS_DT</code>; Finance recognise on <code>NOTIFICATION_DT</code></td>
+<td><code>claims_glossary.md:6-9</code></td>
+<td>Separate <code>date_of_loss</code> vs <code>date_of_notification</code>; ban unqualified "incurred in month"</td>
+</tr>
+<tr>
+<td><strong>Customer vs Policyholder</strong></td>
+<td>Finance "Customer"=APF banking <code>CUSTOMER_ID</code>; UW "Policyholder"=<code>PARTY_ID</code>/<code>CLIENT_NO</code>; Life=<code>INSNAME</code> free text</td>
+<td><code>finance_data_dictionary.csv:4</code>; <code>underwriting_data_dictionary.csv:3</code>; <code>life_operations_glossary.md:12-13</code></td>
+<td>Canonical <strong>Party</strong> domain with role attributes (banking‑customer / policyholder / claimant)</td>
+</tr>
+<tr>
+<td><strong>Product code</strong></td>
+<td>6 live (MOT/HOM/PET/TRV/CPM/CLB); LEGACY_PAS emits retired <code>CAR/HSE</code>, mapping table lost/hardcoded</td>
+<td><code>underwriting_data_dictionary.csv:6</code></td>
+<td>Governed product reference table; retire hardcoded session pre‑SQL</td>
+</tr>
+<tr>
+<td><strong>IPT</strong></td>
+<td>12% hardcoded in 3 codebases + 1 unused parameter</td>
+<td><code>finance_data_dictionary.csv:7</code>; <code>wf_BILLING_PREMIUM_RECON.xml:17-19</code>; <code>06_stg_earned_premium.bteq:26</code>; <code>docs/known_issues_register.md:15</code></td>
+<td>Single reference rate; use <code>POLICY.IPT_RATE</code> everywhere</td>
+</tr>
+<tr>
+<td><strong>Claimant</strong></td>
+<td><code>CLAIMANT_PARTY_ID</code> back‑filled from policy party for legacy claims (may not be the actual claimant)</td>
+<td><code>claims_glossary.md:16-17</code></td>
+<td>Distinguish <code>policyholder_party_id</code> from <code>claimant_party_id</code>; flag back‑filled rows</td>
+</tr>
+</tbody>
+</table></section><section id="d4"><h2>4 · DQ Registry Diff</h2><h1 id="deliverable-4-dq-registry-vs-actual-implementations">Deliverable 4 — DQ Registry vs. Actual Implementations</h1>
+<p>The DQ registry (<code>dq_rules/dq_rules_registry.csv</code>, 7 rules) and the ad-hoc SQL pack
+(<code>dq_rules/sql/dq_checks_claims.sql</code>) are diffed against the actual code across
+Informatica, SAS, BTEQ, PL/SQL, mainframe COBOL and AS/400. Each rule is classified
+<strong>Implemented / Registry-only / Implemented-but-unregistered (gap)</strong>, with drift noted.</p>
+<hr />
+<h2 id="41-rule-by-rule-diff">4.1 Rule-by-rule diff</h2>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Registry says</th>
+<th>Actual implementations</th>
+<th>Classification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>DQR-007 Email</strong></td>
+<td>INFA <code>EXP_EMAIL_DQ</code> only</td>
+<td>INFA regex+lowercase (<code>wf_PARTY_MDM_SYNC.xml:9-12</code>); BTEQ <code>@</code>‑only (<code>04_stg_policy_360.bteq:59-61</code>); banking pipeline <strong>none</strong> (<code>dq_rules_registry.csv:2</code>)</td>
+<td>2 engines + 1 <strong>unregistered gap</strong></td>
+</tr>
+<tr>
+<td><strong>DQR-014 Postcode</strong></td>
+<td>INFA variant A + BTEQ</td>
+<td>4 P&amp;C engines (all differ) + LIFE400 has no field (§4.2)</td>
+<td>drift across <strong>5 variants</strong></td>
+</tr>
+<tr>
+<td><strong>DQR-021 NINO masking</strong></td>
+<td>INFA <code>EXP_NINO_MASK</code></td>
+<td>INFA marts‑only (<code>wf_PARTY_MDM_SYNC.xml:15-17</code>); SAS <code>mask_nino</code> output‑only w/ <strong>raw‑join bypass AR‑118</strong> (§4.3)</td>
+<td>PARTIAL + bypass</td>
+</tr>
+<tr>
+<td><strong>DQR-030 Policy status domain</strong></td>
+<td>none registered</td>
+<td>LEGACY_PAS emits retired <code>CAR/HSE</code> + status <code>PD</code> dropped by SQ filter</td>
+<td><strong>unregistered / DRAFT</strong>, <code>dq_rules_registry.csv:5</code></td>
+</tr>
+<tr>
+<td><strong>DQR-033 Loss date not future</strong></td>
+<td>BTEQ 05 (commented out 2022)</td>
+<td>no active impl; ad‑hoc pack re‑implements it (<code>dq_checks_claims.sql:4-8</code>)</td>
+<td>SUSPENDED + shadow ad‑hoc</td>
+</tr>
+<tr>
+<td><strong>DQR-041 Party duplicate</strong></td>
+<td>MDM survivorship</td>
+<td>55% match; 41k suspects; life name+DOB fuzzy; MKTG never crosswalked</td>
+<td>ACTIVE but ineffective, <code>dq_rules_registry.csv:7</code></td>
+</tr>
+<tr>
+<td><strong>DQR-052 Century pivot</strong></td>
+<td>none</td>
+<td>pivot 49 / 50 / 40 in 3+ places (§4.4)</td>
+<td><strong>unregistered / DRAFT</strong> drift</td>
+</tr>
+</tbody>
+</table>
+<p>Additional <strong>unregistered</strong> DQ logic found in code: fraud‑flag mismatch check and
+earned‑premium tri‑reconciliation in the ad‑hoc pack (<code>dq_checks_claims.sql:17-26</code>),
+duplicate‑key check silently skipped &gt;1m rows (<code>validate_policy.sas:26-28</code>, CR‑2022‑410),
+and the APF orphan‑match ~3% drop (<code>wf_BILLING_PREMIUM_RECON.xml:22</code>).</p>
+<hr />
+<h2 id="42-dqr-014-postcode-four-engines-all-different-a-5th-life400-variant">4.2 DQR-014 Postcode — FOUR engines (all different) + a 5th LIFE400 variant</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Engine</th>
+<th>Behaviour</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>Informatica <code>EXP_POSTCODE_DQ</code></td>
+<td><strong>auto‑repairs</strong> a missing space (inserts before final 3 chars), uppercases, then <code>REG_MATCH</code> — most permissive</td>
+<td><code>wf_POLICY_MASTER_DAILY.xml:41-45</code></td>
+</tr>
+<tr>
+<td>B</td>
+<td>BTEQ <code>04_stg_policy_360</code></td>
+<td><strong>requires</strong> an embedded space (<code>LIKE '% %'</code>) + first char alpha; upper‑cases</td>
+<td><code>04_stg_policy_360.bteq:51-57</code></td>
+</tr>
+<tr>
+<td>C</td>
+<td>SAS <code>check_uk_postcode.sas</code></td>
+<td>full PRX pattern, <strong>case‑SENSITIVE</strong> (rejects lowercase); <strong>never registered</strong></td>
+<td><code>sas/macros/check_uk_postcode.sas:6-9</code>,<code>:16-17</code></td>
+</tr>
+<tr>
+<td>D</td>
+<td>COBOL <code>PLCYMSTR</code> 88‑level</td>
+<td><strong>first char alpha only</strong> (PR4471) — weakest</td>
+<td><code>mainframe/copybooks/PLCYMSTR.cpy:28-30</code></td>
+</tr>
+<tr>
+<td>E</td>
+<td>LIFE400</td>
+<td><strong>no postcode field at all</strong> — addresses stranded in ADDRMST (GDPR SAR impact)</td>
+<td><code>as400_life/extracts/LIFEXTR.clle:13-15</code>; <code>docs/feed_inventory.md:33-35</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>How they differ on the same input:</strong> <code>ec1a 1bb</code> → A repairs/validates VALID, B fails
+(lowercase first‑char test passes but case handling differs), C <strong>rejects</strong> (lowercase),
+D passes (first char alpha). <code>EC1A1BB</code> (no space) → A repairs to VALID, B <strong>fails</strong>
+(no space), C fails (no space), D passes. Documented in the SAS macro header
+(<code>check_uk_postcode.sas:6-9</code>) and BTEQ comment (<code>04_stg_policy_360.bteq:51-54</code>). The
+registry lists only A and B (<code>dq_rules_registry.csv:3</code>); C and D are <strong>unregistered</strong>.
+A <strong>4th standardiser variant</strong> (US‑format, applied to UK addresses since a 2018 copy‑paste)
+lives in the GSS estate per <code>mplt_DQ_PARTY_STANDARDISE.xml:6</code>.</p>
+<hr />
+<h2 id="43-dqr-021-nino-masking-2-stacks-raw-join-bypass-ar-118">4.3 DQR-021 NINO masking — 2 stacks + raw-join bypass (AR-118)</h2>
+<table>
+<thead>
+<tr>
+<th>Stack</th>
+<th>Behaviour</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Informatica <code>EXP_NINO_MASK</code></td>
+<td>masks <code>first2 + '*****' + last2</code>, <strong>marts only</strong>; SAS reads raw upstream</td>
+<td><code>wf_PARTY_MDM_SYNC.xml:15-17</code></td>
+</tr>
+<tr>
+<td>SAS <code>mask_nino.sas</code></td>
+<td>same shape, but applied <strong>on OUTPUT only</strong></td>
+<td><code>sas/macros/mask_nino.sas:11-19</code></td>
+</tr>
+<tr>
+<td><strong>Bypass (AR‑118)</strong></td>
+<td><code>05_claims_fraud_scoring.sas</code> <strong>joins on raw <code>PARTY.NINO</code></strong> "for match quality"; masking applied only to the published dataset</td>
+<td><code>05_claims_fraud_scoring.sas:5</code>,<code>:32-38</code>,<code>:85</code>; <code>docs/known_issues_register.md:6</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Drift:</strong> the two masks are structurally the same but maintained separately; more
+importantly the SAS fraud pipeline defeats the control by joining raw NINO before
+masking (accepted risk, DPIA 2022, never remediated). <strong>Lineage gap (G4):</strong> the registry
+and <code>mask_nino.sas:4-6</code> claim descent from a GSS "Pseudossn" Informatica job, but the
+three GSS exports carry <strong>raw SSN as join keys</strong> with no masking transform present.</p>
+<hr />
+<h2 id="44-julian-century-conversion-3-places-three-pivot-years-dqr-052">4.4 Julian / century conversion — 3 places, THREE pivot years (DQR-052)</h2>
+<table>
+<thead>
+<tr>
+<th>Impl</th>
+<th>Pivot</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Informatica <code>EXP_POLICY_DATES</code></td>
+<td><strong>49</strong> (<code>&lt;=49 ⇒ 20xx</code>)</td>
+<td><code>wf_POLICY_MASTER_DAILY.xml:37</code></td>
+</tr>
+<tr>
+<td>SAS <code>julian_to_date.sas</code> (actuarial)</td>
+<td><strong>50</strong> (<code>&lt;=50 ⇒ 20xx</code>)</td>
+<td><code>sas/macros/julian_to_date.sas:12</code></td>
+</tr>
+<tr>
+<td>LIFE400 / DataStage / <code>V_LIFE_POLICY</code></td>
+<td><strong>40</strong> (<code>&gt;=40 ⇒ 19xx</code>)</td>
+<td><code>teradata/ddl/04_life_db.sql:22</code>; <code>as400_life/extracts/LIFEXTR.clle:9</code>; <code>POLMSTEX_feed_spec.md:5-7</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Drift:</strong> a policy/DOB with two‑digit year 49/50 resolves to different centuries
+across the actuarial and DWH views (<code>julian_to_date.sas:4-7</code>). Life DOBs 1925–1939 are
+at risk of a <strong>+100y shift</strong> under pivot 40 (<code>docs/known_issues_register.md:18</code>;
+<code>POLMSTEX_feed_spec.md:17</code>). Registry lists DQR‑052 as <strong>DRAFT with no implementation</strong>
+(<code>dq_rules_registry.csv:8</code>).</p>
+<hr />
+<h2 id="45-related-date-drift-inc0067812-loss-date-usuk">4.5 Related date drift — INC0067812 (loss-date US/UK)</h2>
+<p>Not a registry rule but the same class of drift: Informatica parses Guidewire loss
+dates as <strong>MM/DD/YYYY</strong> while BTEQ treats the field as <strong>DD/MM/YYYY</strong>; ~40% of claims
+diverge for day ≤ 12. Evidence: <code>wf_CLAIMS_FNOL_INTRADAY.xml:9</code>;
+<code>05_stg_claims_summary.bteq:7-11</code>,<code>:30</code>; <code>docs/known_issues_register.md:5</code>;
+<code>actuarial_definitions.md:12-14</code>.</p>
+<hr />
+<h2 id="46-sii-line-of-business-mapping-drift-sas-vs-informatica">4.6 SII Line-of-Business mapping drift (SAS vs Informatica)</h2>
+<table>
+<thead>
+<tr>
+<th>Impl</th>
+<th><code>PET</code> maps to</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SAS <code>08_solvency_ii_qrt_prep.sas</code></td>
+<td><strong>'Miscellaneous financial loss'</strong></td>
+<td><code>sas/regulatory/08_solvency_ii_qrt_prep.sas:23-31</code></td>
+</tr>
+<tr>
+<td>Informatica <code>LKP_SII_LOB</code></td>
+<td><strong>'Other motor'</strong> (2023 fat‑finger; "simply wrong")</td>
+<td><code>wf_REINSURANCE_BORDEREAUX_MONTHLY.xml:19-22</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Impact:</strong> the QRT (from SAS) and the outward bordereau (from Informatica) report PET
+under <strong>different Solvency II LoBs</strong>; undetected (<code>docs/known_issues_register.md:13</code>).
+Not in the DQ registry — an <strong>unregistered consistency gap</strong>. Canonical fix: single
+governed <code>REF_DB.SII_LOB_MAP</code> consumed by both, with a cross‑engine equality test.</p>
+<hr />
+<h2 id="47-summary-counts">4.7 Summary counts</h2>
+<ul>
+<li>Registry rules: <strong>7</strong> (<code>dq_rules_registry.csv</code>). Implemented as written: <strong>0</strong> cleanly
+  (all show drift, partial coverage, suspension, or missing implementation).</li>
+<li>Registry‑only / DRAFT / SUSPENDED with no active impl: <strong>DQR‑030, DQR‑033, DQR‑052</strong>.</li>
+<li>Implemented‑but‑unregistered: SAS postcode (C), COBOL postcode (D), fraud‑flag mismatch
+  check, earned‑premium tri‑recon, duplicate‑key skip, APF orphan drop, <strong>SII LoB drift</strong>.</li>
+<li>Highest‑risk findings: <strong>AR‑118 raw‑NINO join</strong> (DPO), <strong>SII LoB drift</strong> (regulatory),
+  <strong>three Y2K pivots</strong> (data correctness), <strong>postcode 5‑variant sprawl</strong> (GDPR/matching).</li>
+</ul></section></main>
+</div>
+<footer>Generated from the markdown deliverables in <code>assessment/</code> via
+<code>build_html.py</code>. No legacy source files were modified.</footer>
+</body>
+</html>
