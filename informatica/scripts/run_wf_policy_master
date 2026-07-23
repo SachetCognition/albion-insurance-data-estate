@@ -1,0 +1,33 @@
+#!/bin/ksh
+#*************************************************************************/
+#* Script Name   : run_wf_policy_master                                  *
+#* Creation Date : 04/11/2021                                            *
+#* Created By    : D. Okafor (contractor, left 2022)                     *
+#* Description   : Kick off wf_POLICY_MASTER_DAILY after NDM arrival.    *
+#* Called By     : Control-M ALB-DWH-0032; manually on reruns            *
+#* Modifications :                                                       *
+#* Who JM Date 02/03/2023 What: hardcoded prod password removed (moved   *
+#*        to pmpasswd env var... which is exported in /etc/profile.d/    *
+#*        informatica.sh in plain text)                                  *
+#*************************************************************************/
+p_mailid='dwh-oncall@albion-general.co.uk claims-mi@albion-general.co.uk'
+INFA_HOME=/opt/informatica/10.5
+DOMAIN=Domain_ALB_PROD
+ISVC=ALB_INT_SVC
+
+FNAME=/interface/inbound/plcymstr/PLCYMSTR_D`date +%y%m%d`.dat
+if [ ! -e $FNAME ]
+then
+  echo "No such file at $FNAME exiting..." | mailx -s "Aborting: PLCYMSTR feed not found" $p_mailid
+  exit 8
+fi
+
+$INFA_HOME/server/bin/pmcmd startworkflow -sv $ISVC -d $DOMAIN \
+  -u etl_batch -p $pmpasswd -f INS_POLICY -wait wf_POLICY_MASTER_DAILY
+rc=$?
+if [ $rc -ne 0 ]; then
+  echo "wf_POLICY_MASTER_DAILY failed rc=$rc" | mailx -s "FAILED wf_POLICY_MASTER_DAILY" $p_mailid
+  exit $rc
+fi
+# kick BTEQ staging (should be Control-M's job, but added here 2022 "temporarily")
+/opt/albion/etl/teradata/bteq/run_insurance_bteq.sh

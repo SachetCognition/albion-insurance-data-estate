@@ -1,0 +1,66 @@
+     A*===============================================================*
+     A* FILE:      POLRPT                                            *
+     A* TYPE:      PRINTER FILE                                      *
+     A* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             *
+     A* AUTHOR:    R. KOWALSKI                                       *
+     A* DATE:      1997-09-12                                        *
+     A* VERSION:   1.1                                               *
+     A*---------------------------------------------------------------*
+     A* POLICY LISTING REPORT                                        *
+     A* CRTPRTF FILE(LIFE400/POLRPT) SRCFILE(LIFE400/QDDSSRC)       *
+     A*===============================================================*
+     A                                      PAGESIZE(66 132)
+     A                                      LINECOUNT(60)
+     A*--- PAGE HEADER ---
+     A          R POLRPTHDR                   SPACEB(3)
+     A                                   1   1'LINCOLN LIFE INSURANCE CO.'
+     A                                   1  50'POLICY MASTER LISTING'
+     A                                   1 100'DATE:'
+     A            RPTHDATE       8A         1 106
+     A                                   1 115'PAGE:'
+     A            RPTPGNO        4S 0       1 121EDTCDE(Z)
+     A                                   2   1'LIFE400 SYSTEM'
+     A                                   2  50'RPT-POL-001'
+     A                                   3   1SPACEA(1)
+     A*--- COLUMN HEADERS ---
+     A          R POLRPTCOL                   SPACEB(1)
+     A                                   1   1'POLICY ID'
+     A                                   1  15'INSURED NAME'
+     A                                   1  57'PLAN'
+     A                                   1  63'STATUS'
+     A                                   1  71'SUM ASSURED'
+     A                                   1  85'ANNUAL PREM'
+     A                                   1  99'MODAL PREM'
+     A                                   1 112'BILLING'
+     A                                   2   1SPACEA(1)
+     A                                   2   1'------------'
+     A                                   2  15'----------------------------------+'
+     A                                   2  57'-----'
+     A                                   2  63'------'
+     A                                   2  71'-----------'
+     A                                   2  85'-----------'
+     A                                   2  99'----------'
+     A                                   2 112'-------'
+     A*--- DETAIL LINE ---
+     A          R POLRPTDET                   SPACEB(1)
+     A            RPOLID        12A         1   1
+     A            RINSNAM       30A         1  15
+     A            RPLANCD        5A         1  57
+     A            RCNTRST        2A         1  63
+     A            RSUMASR       15S 2       1  71EDTCDE(1)
+     A            RANPREM       15S 2       1  85EDTCDE(1)
+     A            RMODPRM       15S 2       1  99EDTCDE(1)
+     A            RBILMOD        1A         1 114
+     A*--- TOTAL LINE ---
+     A          R POLRPTTOT                   SPACEB(2)
+     A                                   1   1'TOTALS:'
+     A            RTOTCNT        5S 0       1  10EDTCDE(Z)
+     A                                   1  16'POLICIES'
+     A                                   1  30'TOTAL SUM ASSURED:'
+     A            RTOTSA        15S 2       1  49EDTCDE(1)
+     A                                   1  68'TOTAL ANNUAL PREM:'
+     A            RTOTAP        15S 2       1  87EDTCDE(1)
+     A*--- PAGE FOOTER ---
+     A          R POLRPTFTR                   SPACEB(2)
+     A                                   1   1'*** END OF REPORT ***'
+     A                                   1  50'LIFE400/POLRPT'

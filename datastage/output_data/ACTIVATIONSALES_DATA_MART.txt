@@ -1,0 +1,2 @@
+"citizen","110"
+"foriegn","21"

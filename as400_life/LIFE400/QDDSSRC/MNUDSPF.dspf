@@ -1,0 +1,55 @@
+     A*===============================================================*
+     A* FILE:      MNUDSPF                                           *
+     A* TYPE:      DISPLAY FILE                                      *
+     A* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             *
+     A* AUTHOR:    R. KOWALSKI                                       *
+     A* DATE:      1997-09-12                                        *
+     A* VERSION:   1.2                                               *
+     A*---------------------------------------------------------------*
+     A* MAIN MENU - TERM LIFE POLICY SYSTEM                          *
+     A* CRTDSPF FILE(LIFE400/MNUDSPF) SRCFILE(LIFE400/QDDSSRC)      *
+     A*===============================================================*
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      PRINT
+     A                                      CA03(03 'EXIT')
+     A                                      CA12(12 'CANCEL')
+     A*---------------------------------------------------------------*
+     A* MAIN SCREEN RECORD FORMAT                                     *
+     A*---------------------------------------------------------------*
+     A          R MAINSCR
+     A                                  1   2'LIFE400'
+     A                                      DSPATR(HI)
+     A                                  1  30'LINCOLN LIFE INSURANCE CO.'
+     A                                      DSPATR(HI)
+     A                                  1  65'DATE:'
+     A            MNUDATE        6S 0   1  71EDTCDE(Y)
+     A                                  2  27'TERM LIFE POLICY SYSTEM'
+     A                                      DSPATR(HI UL)
+     A                                  3   1'  ____________________________________________'
+     A                                      DSPATR(HI)
+     A                                  5  20'1.  New Business / Policy Issuance'
+     A                                  6  20'2.  Policy Servicing and Amendments'
+     A                                  7  20'3.  Claims Adjudication'
+     A                                  8  20'4.  Policy Master Inquiry'
+     A                                  9  20'5.  Reports Menu'
+     A                                 11  20'90.  Sign Off'
+     A                                 13   1'  ____________________________________________'
+     A                                      DSPATR(HI)
+     A                                 15  20'Selection . .'
+     A            MNUSEL          2A  B 15  33
+     A                                 23   2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23  12'F12=Cancel'
+     A                                      COLOR(BLU)
+     A                                 23  55'USER:'
+     A            MNUUSER        10A   23  61
+     A                                      DSPATR(HI)
+     A*---------------------------------------------------------------*
+     A* MESSAGE/ERROR RECORD FORMAT                                   *
+     A*---------------------------------------------------------------*
+     A          R MNUMSG
+     A                                 24   2'==>'
+     A                                      DSPATR(HI)
+     A            MNUMSGD        74A   24   6
+     A                                      DSPATR(HI)
+     A                                      COLOR(RED)

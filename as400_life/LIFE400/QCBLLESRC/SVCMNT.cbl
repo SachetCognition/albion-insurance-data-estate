@@ -1,0 +1,448 @@
+      *===============================================================*
+      * PROGRAM:   SVCMNT                                            *
+      * SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             *
+      * AUTHOR:    R. KOWALSKI                                       *
+      * DATE:      1998-03-10                                        *
+      * VERSION:   1.1                                               *
+      * MODIFIED:  1998-11-14 - Y2K DATE FIELD REVIEW               *
+      *            1998-07-22 - ADDED F10=REINSTATE SUPPORT         *
+      *---------------------------------------------------------------*
+      * INTERACTIVE POLICY SERVICING MAINTENANCE                     *
+      * SCREEN FLOW:                                                  *
+      *   SVCHDR (LOOKUP POLICY) -> SVCPOL (VIEW CURRENT) ->        *
+      *   SVCAMEND (ENTER CHANGES) -> F6=APPLY OR F10=REINSTATE     *
+      *   -> SVCRESULT                                                *
+      *---------------------------------------------------------------*
+      * CALLED BY: MAINMENU                                           *
+      * FILES:     SVCDSPF (WORKSTATION), POLMST (INDEXED I-O),      *
+      *            SVCPF (INDEXED I-O)                               *
+      * COPYBOOK:  POLDATA (QCPYSRC)                                 *
+      *===============================================================*
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. SVCMNT.
+       AUTHOR.     R. KOWALSKI.
+       DATE-WRITTEN. 1998-03-10.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-AS400.
+       OBJECT-COMPUTER. IBM-AS400.
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT SVCDSPF
+               ASSIGN TO WORKSTATION-SVCDSPF
+               ORGANIZATION IS TRANSACTION
+               ACCESS MODE IS SEQUENTIAL
+               FILE STATUS IS WS-DSP-STATUS.
+           SELECT POLMST
+               ASSIGN TO DATABASE-POLMST
+               ORGANIZATION IS INDEXED
+               ACCESS MODE IS RANDOM
+               RECORD KEY IS PM-POLICY-ID
+               FILE STATUS IS WS-POLMST-STATUS.
+           SELECT SVCPF
+               ASSIGN TO DATABASE-SVCPF
+               ORGANIZATION IS INDEXED
+               ACCESS MODE IS RANDOM
+               RECORD KEY IS PM-SERVICING-DETAILS
+               FILE STATUS IS WS-SVCPF-STATUS.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  SVCDSPF.
+       01  SVC-DSP-RECORD            PIC X(80).
+       FD  POLMST.
+       COPY POLDATA.
+       FD  SVCPF.
+       01  SVCPF-RECORD              PIC X(200).
+
+       WORKING-STORAGE SECTION.
+       77  WS-DSP-STATUS             PIC X(02) VALUE SPACES.
+       77  WS-POLMST-STATUS          PIC X(02) VALUE SPACES.
+       77  WS-SVCPF-STATUS           PIC X(02) VALUE SPACES.
+       77  WS-CONTINUE               PIC X VALUE 'Y'.
+       77  WS-RESULT-CODE            PIC 9(02) VALUE 0.
+       77  WS-RESULT-MESSAGE         PIC X(100) VALUE SPACES.
+       77  WS-OLD-TOTAL-PREMIUM      PIC 9(13)V99 VALUE 0.
+       77  WS-DAYS-SINCE-PAID        PIC 9(07) VALUE 0.
+       77  WS-DAYS-SINCE-LAPSE       PIC 9(07) VALUE 0.
+       77  WS-MODAL-DIVISOR          PIC 9(02) VALUE 1.
+       77  WS-MODAL-FACTOR           PIC 9(01)V9999 VALUE 1.0000.
+       77  WS-RIDER-IDX              PIC 9(02) VALUE 0.
+       77  WS-RIDER-COUNT            PIC 9(02) VALUE 0.
+
+       PROCEDURE DIVISION.
+
+       MAIN-PROCESS.
+           OPEN I-O SVCDSPF
+           OPEN I-O POLMST
+           OPEN I-O SVCPF
+           PERFORM UNTIL WS-CONTINUE = 'N'
+               PERFORM 1000-DISPLAY-HEADER
+               IF *IN03 = '1' OR *IN12 = '1'
+                   MOVE 'N' TO WS-CONTINUE
+               ELSE IF WS-POLMST-STATUS NOT = '00'
+                   MOVE 'POLICY NOT FOUND - PLEASE RE-ENTER'
+                       TO SVCMSG
+                   WRITE SVC-DSP-RECORD FORMAT IS 'SVCRESULT'
+               ELSE
+                   PERFORM 2000-DISPLAY-POLICY
+                   PERFORM 3000-DISPLAY-AMENDMENT
+                   IF *IN03 = '1' OR *IN12 = '1'
+                       MOVE 'N' TO WS-CONTINUE
+                   ELSE IF *IN10 = '1'
+                       MOVE 'RI' TO PM-AMENDMENT-TYPE
+                       PERFORM 4000-APPLY-AMENDMENT
+                   ELSE IF *IN06 = '1'
+                       PERFORM 4000-APPLY-AMENDMENT
+                   END-IF
+               END-IF
+           END-PERFORM
+           CLOSE SVCDSPF POLMST SVCPF
+           GOBACK.
+
+       1000-DISPLAY-HEADER.
+           MOVE SPACES TO SVCPOLID
+      *Y2K-REVIEWED 1998-11-14
+           ACCEPT SVCPRCDT FROM DATE YYYYMMDD
+           WRITE SVC-DSP-RECORD FORMAT IS 'SVCHDR'
+           READ SVCDSPF FORMAT IS 'SVCHDR'
+           MOVE SVCPOLID TO PM-POLICY-ID
+           MOVE SVCPRCDT TO PM-PROCESS-DATE
+           READ POLMST KEY IS PM-POLICY-ID
+               INVALID KEY
+                   CONTINUE
+               NOT INVALID KEY
+                   CONTINUE
+           END-READ.
+
+       2000-DISPLAY-POLICY.
+           MOVE PM-PLAN-CODE TO SVCPLANC
+           MOVE PM-CONTRACT-STATUS TO SVCCNTRST
+           MOVE PM-BILLING-MODE TO SVCBILMD
+           MOVE PM-SUM-ASSURED TO SVCSUMASR
+           MOVE PM-MODAL-PREMIUM TO SVCMODPRM
+           MOVE PM-INSURED-NAME TO SVCINSNAM
+           MOVE PM-ISSUE-AGE TO SVCISSAGE
+           MOVE PM-ATTAINED-AGE TO SVCATTNAG
+           MOVE PM-ISSUE-DATE TO SVCISSDT
+           MOVE PM-EXPIRY-DATE TO SVCEXPDT
+           MOVE PM-PAID-TO-DATE TO SVCPAIDTO
+           WRITE SVC-DSP-RECORD FORMAT IS 'SVCPOL'.
+
+       3000-DISPLAY-AMENDMENT.
+           MOVE SPACES TO SVCAMDTYP
+           MOVE SPACES TO SVCNWPLAN
+           MOVE SPACES TO SVCNWSA
+           MOVE SPACES TO SVCNWBM
+           WRITE SVC-DSP-RECORD FORMAT IS 'SVCAMEND'
+           WRITE SVC-DSP-RECORD FORMAT IS 'SVCFKEYS'
+           READ SVCDSPF FORMAT IS 'SVCAMEND'
+           MOVE SVCAMDTYP TO PM-AMENDMENT-TYPE
+           MOVE SVCNWPLAN TO PM-NEW-PLAN-CODE
+           IF SVCNWSA NOT = SPACES
+               MOVE SVCNWSA TO PM-NEW-SUM-ASSURED
+           END-IF
+           MOVE SVCNWBM TO PM-NEW-BILLING-MODE.
+
+       4000-APPLY-AMENDMENT.
+           MOVE PM-TOTAL-ANNUAL-PREMIUM TO WS-OLD-TOTAL-PREMIUM
+           MOVE ZEROS TO WS-RESULT-CODE
+           MOVE SPACES TO WS-RESULT-MESSAGE
+           MOVE ZEROS TO PM-SERVICE-FEE-CHARGED
+      * CHECK POLICY STATUS
+           IF PM-STATUS-CLAIMED OR PM-STATUS-TERMINATED
+               MOVE 11 TO WS-RESULT-CODE
+               MOVE 'CLAIMED OR TERMINATED: CANNOT SERVICE'
+                   TO WS-RESULT-MESSAGE
+               PERFORM 9000-DISPLAY-RESULT
+               EXIT PARAGRAPH
+           END-IF
+      * LOAD PLAN PARAMS AND RECALC ATTAINED AGE
+           PERFORM 1100-LOAD-PLAN-PARAMETERS
+           COMPUTE PM-ATTAINED-AGE =
+               PM-ISSUE-AGE +
+               ((PM-PROCESS-DATE - PM-ISSUE-DATE) / 365)
+      * EVALUATE PAYMENT STATUS
+           COMPUTE WS-DAYS-SINCE-PAID =
+               PM-PROCESS-DATE - PM-PAID-TO-DATE
+           IF PM-STATUS-ACTIVE AND WS-DAYS-SINCE-PAID > 0 AND
+              WS-DAYS-SINCE-PAID <= PM-GRACE-DAYS
+               MOVE 'GR' TO PM-CONTRACT-STATUS
+           END-IF
+           IF (PM-STATUS-ACTIVE OR PM-STATUS-GRACE) AND
+              WS-DAYS-SINCE-PAID > PM-GRACE-DAYS
+               MOVE 'LA' TO PM-CONTRACT-STATUS
+           END-IF
+      * DISPATCH TO AMENDMENT TYPE
+           EVALUATE PM-AMENDMENT-TYPE
+               WHEN 'PL' PERFORM 4100-CHANGE-PLAN
+               WHEN 'SA' PERFORM 4200-CHANGE-SA
+               WHEN 'BM' PERFORM 4300-CHANGE-BM
+               WHEN 'AR' PERFORM 4400-ADD-RIDER
+               WHEN 'RR' PERFORM 4500-REMOVE-RIDER
+               WHEN 'RI' PERFORM 4600-REINSTATE
+               WHEN OTHER
+                   MOVE 12 TO WS-RESULT-CODE
+                   MOVE 'INVALID AMENDMENT TYPE' TO WS-RESULT-MESSAGE
+           END-EVALUATE
+           REWRITE WS-POLICY-MASTER-REC
+           WRITE SVCPF-RECORD
+           PERFORM 9000-DISPLAY-RESULT.
+
+       4100-CHANGE-PLAN.
+           IF NOT PM-STATUS-ACTIVE AND NOT PM-STATUS-GRACE
+               MOVE 13 TO WS-RESULT-CODE
+               MOVE 'PLAN CHANGE: POLICY MUST BE ACTIVE OR IN GRACE'
+                   TO WS-RESULT-MESSAGE
+               EXIT PARAGRAPH
+           END-IF
+           MOVE PM-PLAN-CODE TO PM-OLD-PLAN-CODE
+           MOVE PM-NEW-PLAN-CODE TO PM-PLAN-CODE
+           PERFORM 1100-LOAD-PLAN-PARAMETERS
+           IF PM-ATTAINED-AGE < PM-MIN-ISSUE-AGE OR
+              PM-ATTAINED-AGE > PM-MAX-ISSUE-AGE
+               MOVE 14 TO WS-RESULT-CODE
+               MOVE 'PLAN CHANGE: AGE OUTSIDE NEW PLAN LIMITS'
+                   TO WS-RESULT-MESSAGE
+               MOVE PM-OLD-PLAN-CODE TO PM-PLAN-CODE
+               EXIT PARAGRAPH
+           END-IF
+           PERFORM 3100-REPRICE-POLICY
+           ADD PM-SERVICE-FEE TO PM-SERVICE-FEE-CHARGED
+           MOVE 'AP' TO PM-AMENDMENT-STATUS
+           MOVE 0 TO WS-RESULT-CODE
+           MOVE 'PLAN CHANGE APPLIED' TO WS-RESULT-MESSAGE.
+
+       4200-CHANGE-SA.
+           IF PM-NEW-SUM-ASSURED = 0 OR
+              PM-NEW-SUM-ASSURED < PM-MIN-SUM-ASSURED OR
+              PM-NEW-SUM-ASSURED > PM-MAX-SUM-ASSURED
+               MOVE 15 TO WS-RESULT-CODE
+               MOVE 'NEW SA MISSING OR OUT OF PLAN LIMITS'
+                   TO WS-RESULT-MESSAGE
+               EXIT PARAGRAPH
+           END-IF
+           IF PM-NEW-SUM-ASSURED > PM-SUM-ASSURED
+               IF PM-NEW-SUM-ASSURED > (PM-SUM-ASSURED * 1.25) OR
+                  PM-NEW-SUM-ASSURED > 25000000000000
+                   MOVE 'Y' TO PM-UW-REQUIRED
+                   MOVE 31 TO WS-RESULT-CODE
+                   MOVE 'SA INCREASE REQUIRES UW REVIEW' TO WS-RESULT-MESSAGE
+                   MOVE 'PE' TO PM-AMENDMENT-STATUS
+                   EXIT PARAGRAPH
+               END-IF
+           END-IF
+           MOVE PM-SUM-ASSURED TO PM-OLD-SUM-ASSURED
+           MOVE PM-NEW-SUM-ASSURED TO PM-SUM-ASSURED
+           PERFORM 3100-REPRICE-POLICY
+           ADD PM-SERVICE-FEE TO PM-SERVICE-FEE-CHARGED
+           MOVE 'AP' TO PM-AMENDMENT-STATUS
+           MOVE 0 TO WS-RESULT-CODE
+           MOVE 'SUM ASSURED CHANGE APPLIED' TO WS-RESULT-MESSAGE.
+
+       4300-CHANGE-BM.
+           IF PM-NEW-BILLING-MODE NOT = 'A' AND
+              PM-NEW-BILLING-MODE NOT = 'S' AND
+              PM-NEW-BILLING-MODE NOT = 'Q' AND
+              PM-NEW-BILLING-MODE NOT = 'M'
+               MOVE 16 TO WS-RESULT-CODE
+               MOVE 'INVALID BILLING MODE' TO WS-RESULT-MESSAGE
+               EXIT PARAGRAPH
+           END-IF
+           MOVE PM-BILLING-MODE TO PM-OLD-BILLING-MODE
+           MOVE PM-NEW-BILLING-MODE TO PM-BILLING-MODE
+           PERFORM 3200-RECALCULATE-MODAL
+           ADD 1000 TO PM-SERVICE-FEE-CHARGED
+           MOVE 'AP' TO PM-AMENDMENT-STATUS
+           MOVE 0 TO WS-RESULT-CODE
+           MOVE 'BILLING MODE CHANGE APPLIED' TO WS-RESULT-MESSAGE.
+
+       4400-ADD-RIDER.
+           MOVE 0 TO WS-RIDER-COUNT
+           PERFORM VARYING WS-RIDER-IDX FROM 1 BY 1
+               UNTIL WS-RIDER-IDX > 5
+               IF PM-RIDER-CODE(WS-RIDER-IDX) NOT = SPACES AND
+                  PM-RIDER-ACTIVE(WS-RIDER-IDX)
+                   ADD 1 TO WS-RIDER-COUNT
+               END-IF
+           END-PERFORM
+           IF WS-RIDER-COUNT >= 5
+               MOVE 17 TO WS-RESULT-CODE
+               MOVE 'MAXIMUM 5 RIDERS ALREADY ON POLICY'
+                   TO WS-RESULT-MESSAGE
+               EXIT PARAGRAPH
+           END-IF
+           IF PM-ATTAINED-AGE > 60
+               MOVE 18 TO WS-RESULT-CODE
+               MOVE 'ADB RIDER: CANNOT ADD ABOVE AGE 60'
+                   TO WS-RESULT-MESSAGE
+               EXIT PARAGRAPH
+           END-IF
+           PERFORM VARYING WS-RIDER-IDX FROM 1 BY 1
+               UNTIL WS-RIDER-IDX > 5
+               IF PM-RIDER-CODE(WS-RIDER-IDX) = SPACES
+                   MOVE 'ADB01' TO PM-RIDER-CODE(WS-RIDER-IDX)
+                   MOVE PM-SUM-ASSURED
+                       TO PM-RIDER-SUM-ASSURED(WS-RIDER-IDX)
+                   MOVE 'A' TO PM-RIDER-STATUS(WS-RIDER-IDX)
+                   STOP PERFORM
+               END-IF
+           END-PERFORM
+           PERFORM 3100-REPRICE-POLICY
+           ADD 1200 TO PM-SERVICE-FEE-CHARGED
+           MOVE 'AP' TO PM-AMENDMENT-STATUS
+           MOVE 0 TO WS-RESULT-CODE
+           MOVE 'ADB RIDER ADDED' TO WS-RESULT-MESSAGE.
+
+       4500-REMOVE-RIDER.
+           PERFORM VARYING WS-RIDER-IDX FROM 1 BY 1
+               UNTIL WS-RIDER-IDX > 5
+               IF PM-RIDER-CODE(WS-RIDER-IDX) = 'ADB01' AND
+                  PM-RIDER-ACTIVE(WS-RIDER-IDX)
+                   MOVE 'R' TO PM-RIDER-STATUS(WS-RIDER-IDX)
+                   MOVE ZEROS TO PM-RIDER-SUM-ASSURED(WS-RIDER-IDX)
+                   MOVE ZEROS TO PM-RIDER-ANNUAL-PREM(WS-RIDER-IDX)
+                   STOP PERFORM
+               END-IF
+           END-PERFORM
+           PERFORM 3100-REPRICE-POLICY
+           ADD 1000 TO PM-SERVICE-FEE-CHARGED
+           MOVE 'AP' TO PM-AMENDMENT-STATUS
+           MOVE 0 TO WS-RESULT-CODE
+           MOVE 'ADB RIDER REMOVED' TO WS-RESULT-MESSAGE.
+
+       4600-REINSTATE.
+           IF NOT PM-STATUS-LAPSED
+               MOVE 21 TO WS-RESULT-CODE
+               MOVE 'REINSTATEMENT: POLICY IS NOT LAPSED'
+                   TO WS-RESULT-MESSAGE
+               EXIT PARAGRAPH
+           END-IF
+           COMPUTE WS-DAYS-SINCE-LAPSE =
+               PM-PROCESS-DATE - PM-PAID-TO-DATE
+           IF WS-DAYS-SINCE-LAPSE > 730
+               MOVE 22 TO WS-RESULT-CODE
+               MOVE 'REINSTATEMENT: LAPSED MORE THAN 730 DAYS'
+                   TO WS-RESULT-MESSAGE
+               EXIT PARAGRAPH
+           END-IF
+           MOVE PM-MODAL-PREMIUM TO PM-OUTSTANDING-PREMIUM
+           ADD 1500 TO PM-SERVICE-FEE-CHARGED
+           ADD 2500 TO PM-SERVICE-FEE-CHARGED
+           MOVE 'RS' TO PM-CONTRACT-STATUS
+           MOVE 'AP' TO PM-AMENDMENT-STATUS
+           MOVE 0 TO WS-RESULT-CODE
+           MOVE 'POLICY REINSTATED' TO WS-RESULT-MESSAGE.
+
+       1100-LOAD-PLAN-PARAMETERS.
+           EVALUATE PM-PLAN-CODE
+               WHEN 'T1001'
+                   MOVE 70 TO PM-MATURITY-AGE
+                   MOVE 18 TO PM-MIN-ISSUE-AGE
+                   MOVE 60 TO PM-MAX-ISSUE-AGE
+                   MOVE 10000000000000 TO PM-MIN-SUM-ASSURED
+                   MOVE 50000000000000 TO PM-MAX-SUM-ASSURED
+                   MOVE 30 TO PM-GRACE-DAYS
+                   MOVE 4500 TO PM-ANNUAL-POLICY-FEE
+                   MOVE 1500 TO PM-SERVICE-FEE
+                   MOVE 0.0200 TO PM-TAX-RATE
+               WHEN 'T2001'
+                   MOVE 75 TO PM-MATURITY-AGE
+                   MOVE 18 TO PM-MIN-ISSUE-AGE
+                   MOVE 55 TO PM-MAX-ISSUE-AGE
+                   MOVE 10000000000000 TO PM-MIN-SUM-ASSURED
+                   MOVE 90000000000000 TO PM-MAX-SUM-ASSURED
+                   MOVE 30 TO PM-GRACE-DAYS
+                   MOVE 5500 TO PM-ANNUAL-POLICY-FEE
+                   MOVE 1500 TO PM-SERVICE-FEE
+                   MOVE 0.0200 TO PM-TAX-RATE
+               WHEN 'T6501'
+                   MOVE 65 TO PM-MATURITY-AGE
+                   MOVE 18 TO PM-MIN-ISSUE-AGE
+                   MOVE 50 TO PM-MAX-ISSUE-AGE
+                   MOVE 10000000000000 TO PM-MIN-SUM-ASSURED
+                   MOVE 75000000000000 TO PM-MAX-SUM-ASSURED
+                   MOVE 30 TO PM-GRACE-DAYS
+                   MOVE 6000 TO PM-ANNUAL-POLICY-FEE
+                   MOVE 1500 TO PM-SERVICE-FEE
+                   MOVE 0.0200 TO PM-TAX-RATE
+           END-EVALUATE.
+
+       3100-REPRICE-POLICY.
+           EVALUATE TRUE
+               WHEN PM-ATTAINED-AGE <= 30 MOVE 0.8500 TO PM-BASE-MORTALITY-RATE
+               WHEN PM-ATTAINED-AGE <= 40 MOVE 1.2000 TO PM-BASE-MORTALITY-RATE
+               WHEN PM-ATTAINED-AGE <= 50 MOVE 2.1500 TO PM-BASE-MORTALITY-RATE
+               WHEN PM-ATTAINED-AGE <= 60 MOVE 4.1000 TO PM-BASE-MORTALITY-RATE
+               WHEN OTHER                 MOVE 7.2500 TO PM-BASE-MORTALITY-RATE
+           END-EVALUATE
+           IF PM-FEMALE MOVE 0.9200 TO PM-GENDER-FACTOR
+           ELSE MOVE 1.0000 TO PM-GENDER-FACTOR END-IF
+           IF PM-SMOKER MOVE 1.7500 TO PM-SMOKER-FACTOR
+           ELSE MOVE 1.0000 TO PM-SMOKER-FACTOR END-IF
+           EVALUATE PM-OCCUPATION-CLASS
+               WHEN 1 MOVE 1.0000 TO PM-OCCUPATION-FACTOR
+               WHEN 2 MOVE 1.1500 TO PM-OCCUPATION-FACTOR
+               WHEN 3 MOVE 1.4000 TO PM-OCCUPATION-FACTOR
+               WHEN OTHER MOVE 1.0000 TO PM-OCCUPATION-FACTOR
+           END-EVALUATE
+           EVALUATE PM-UW-CLASS
+               WHEN 'PR' MOVE 0.9000 TO PM-UW-FACTOR
+               WHEN 'ST' MOVE 1.0000 TO PM-UW-FACTOR
+               WHEN 'TB' MOVE 1.2500 TO PM-UW-FACTOR
+               WHEN OTHER MOVE 1.0000 TO PM-UW-FACTOR
+           END-EVALUATE
+           COMPUTE PM-BASE-ANNUAL-PREMIUM =
+               (PM-SUM-ASSURED / 1000) * PM-BASE-MORTALITY-RATE
+               * PM-GENDER-FACTOR * PM-SMOKER-FACTOR
+               * PM-OCCUPATION-FACTOR * PM-UW-FACTOR
+           MOVE ZEROS TO PM-RIDER-ANNUAL-TOTAL
+           PERFORM VARYING WS-RIDER-IDX FROM 1 BY 1
+               UNTIL WS-RIDER-IDX > 5
+               IF PM-RIDER-CODE(WS-RIDER-IDX) NOT = SPACES AND
+                  PM-RIDER-ACTIVE(WS-RIDER-IDX)
+                   IF PM-RIDER-CODE(WS-RIDER-IDX) = 'ADB01'
+                       COMPUTE PM-RIDER-ANNUAL-PREM(WS-RIDER-IDX) =
+                           (PM-RIDER-SUM-ASSURED(WS-RIDER-IDX)/1000)*0.1800
+                   END-IF
+                   ADD PM-RIDER-ANNUAL-PREM(WS-RIDER-IDX)
+                       TO PM-RIDER-ANNUAL-TOTAL
+               END-IF
+           END-PERFORM
+           COMPUTE PM-GROSS-ANNUAL-PREMIUM =
+               PM-BASE-ANNUAL-PREMIUM + PM-RIDER-ANNUAL-TOTAL
+               + PM-ANNUAL-POLICY-FEE
+           COMPUTE PM-TAX-AMOUNT =
+               PM-GROSS-ANNUAL-PREMIUM * PM-TAX-RATE
+           COMPUTE PM-TOTAL-ANNUAL-PREMIUM =
+               PM-GROSS-ANNUAL-PREMIUM + PM-TAX-AMOUNT
+           COMPUTE PM-PREMIUM-DELTA =
+               PM-TOTAL-ANNUAL-PREMIUM - WS-OLD-TOTAL-PREMIUM
+           PERFORM 3200-RECALCULATE-MODAL.
+
+       3200-RECALCULATE-MODAL.
+           EVALUATE PM-BILLING-MODE
+               WHEN 'A' MOVE 1 TO WS-MODAL-DIVISOR
+                        MOVE 1.0000 TO WS-MODAL-FACTOR
+               WHEN 'S' MOVE 2 TO WS-MODAL-DIVISOR
+                        MOVE 1.0150 TO WS-MODAL-FACTOR
+               WHEN 'Q' MOVE 4 TO WS-MODAL-DIVISOR
+                        MOVE 1.0300 TO WS-MODAL-FACTOR
+               WHEN 'M' MOVE 12 TO WS-MODAL-DIVISOR
+                        MOVE 1.0800 TO WS-MODAL-FACTOR
+           END-EVALUATE
+           COMPUTE PM-MODAL-PREMIUM =
+               (PM-TOTAL-ANNUAL-PREMIUM / WS-MODAL-DIVISOR)
+               * WS-MODAL-FACTOR.
+
+       9000-DISPLAY-RESULT.
+           MOVE PM-MODAL-PREMIUM TO SVCNWMDP
+           MOVE PM-PREMIUM-DELTA TO SVCPREMD
+           MOVE PM-SERVICE-FEE-CHARGED TO SVCSVCFE
+           MOVE PM-AMENDMENT-STATUS TO SVCAMDST
+           MOVE WS-RESULT-MESSAGE TO SVCMSG
+           WRITE SVC-DSP-RECORD FORMAT IS 'SVCRESULT'
+           WRITE SVC-DSP-RECORD FORMAT IS 'SVCFKEYS'
+           READ SVCDSPF FORMAT IS 'SVCRESULT'.

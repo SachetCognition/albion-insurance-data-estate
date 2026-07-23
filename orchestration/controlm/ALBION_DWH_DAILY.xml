@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Control-M folder export: ALBION_DWH_DAILY (extract, prod, 2025-09) -->
+<DEFTABLE>
+  <FOLDER FOLDER_NAME="ALB_DWH_DAILY" DATACENTER="CTMPROD">
+    <JOB JOBNAME="ALB-MDM-0003" DESCRIPTION="wf_PARTY_MDM_SYNC" CMDLINE="pmcmd startworkflow -f MDM_PARTY wf_PARTY_MDM_SYNC" TIMEFROM="0130"/>
+    <JOB JOBNAME="ALB-DWH-0031" DESCRIPTION="NDM watch PLCYMSTR" CMDLINE="/opt/albion/etl/watch_ndm.sh plcymstr" TIMEFROM="0300"/>
+    <JOB JOBNAME="ALB-DWH-0032" DESCRIPTION="run_wf_policy_master (also kicks insurance BTEQ - undocumented)" CMDLINE="/opt/albion/etl/informatica/scripts/run_wf_policy_master" TIMEFROM="0315">
+      <INCOND NAME="ALB-DWH-0031-OK"/>
+      <!-- Missing INCOND on ALB-MDM-0003: policy load can run against a
+           half-synced party hub. Known race, ~3 incidents/yr. -->
+    </JOB>
+    <JOB JOBNAME="ALB-DWH-0040" DESCRIPTION="Premium Finance BTEQ+SAS (run_full_pipeline.sh)" CMDLINE="/opt/albion/etl/orchestration/run_full_pipeline.sh" TIMEFROM="0200"/>
+    <JOB JOBNAME="ALB-DWH-0047" DESCRIPTION="wf_CLAIMS_FNOL_INTRADAY cyclic 30m" CMDLINE="pmcmd startworkflow -f INS_CLAIMS wf_CLAIMS_FNOL_INTRADAY" CYCLIC="Y" INTERVAL="30M" TIMEFROM="0700" TIMETO="2100"/>
+    <JOB JOBNAME="ALB-DWH-0050" DESCRIPTION="Insurance SAS pipeline" CMDLINE="/opt/albion/etl/sas/run_insurance_sas_pipeline.sh" TIMEFROM="0630">
+      <INCOND NAME="ALB-DWH-0032-OK"/>
+    </JOB>
+    <JOB JOBNAME="ALB-LIF-0005" DESCRIPTION="dsjob -run LIFE_POLICY_LOAD (DataStage 9.1; job source lost - do not modify)" CMDLINE="/opt/IBM/InformationServer/Server/DSEngine/bin/dsjob -run -jobstatus DS39 LIFE_POLICY_LOAD" TIMEFROM="0045">
+      <!-- Upstream is an AS/400 ADDJOBSCDE at 23:30 with an FTP push; there is
+           no file-watcher, just a 75-minute gap and hope. -->
+    </JOB>
+    <JOB JOBNAME="ALB-FIN-0012" DESCRIPTION="wf_BILLING_PREMIUM_RECON (monthly WD1)" CMDLINE="pmcmd startworkflow -f FIN_BILLING wf_BILLING_PREMIUM_RECON" TIMEFROM="2200" MONTHDAYS="WD1"/>
+  </FOLDER>
+</DEFTABLE>

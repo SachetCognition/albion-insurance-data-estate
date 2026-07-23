@@ -1,0 +1,129 @@
+     A*===============================================================*
+     A* FILE:      SVCDSPF                                           *
+     A* TYPE:      DISPLAY FILE                                      *
+     A* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             *
+     A* AUTHOR:    R. KOWALSKI                                       *
+     A* DATE:      1998-03-10                                        *
+     A* VERSION:   1.1                                               *
+     A* MODIFIED:  1998-11-14 - Y2K DATE FIELD REVIEW               *
+     A*---------------------------------------------------------------*
+     A* POLICY SERVICING / AMENDMENT SCREEN                          *
+     A* ALSO USED BY POLMSTINQ FOR READ-ONLY INQUIRY                 *
+     A* CRTDSPF FILE(LIFE400/SVCDSPF) SRCFILE(LIFE400/QDDSSRC)      *
+     A*===============================================================*
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      PRINT
+     A                                      CA03(03 'EXIT')
+     A                                      CA06(06 'APPLY AMENDMENT')
+     A                                      CA10(10 'REINSTATE')
+     A                                      CA12(12 'CANCEL')
+     A*---------------------------------------------------------------*
+     A* HEADER - POLICY LOOKUP                                        *
+     A*---------------------------------------------------------------*
+     A          R SVCHDR
+     A                                  1   2'LIFE400'
+     A                                      DSPATR(HI)
+     A 90                               1  22'POLICY MASTER INQUIRY'
+     A                                      DSPATR(HI)
+     A N90                              1  22'POLICY SERVICING / AMENDMENTS'
+     A                                      DSPATR(HI)
+     A                                  1  66'SVCMNT'
+     A                                  3   2'Policy ID  . :'
+     A            SVCPOLID       12A  B  3  17
+     A                                  3  35'Process Date :'
+     A*Y2K: YYYYMMDD
+     A            SVCPRCDT        8A  B  3  51
+     A*---------------------------------------------------------------*
+     A* CURRENT POLICY DISPLAY                                        *
+     A*---------------------------------------------------------------*
+     A          R SVCPOL
+     A                                  5   2'CURRENT POLICY'
+     A                                      DSPATR(HI UL)
+     A                                  6   2'Plan Code  . :'
+     A            SVCPLANC        5A   6  17
+     A                                      DSPATR(HI)
+     A                                  6  26'Status . . . :'
+     A            SVCCNTRST       2A   6  41
+     A                                      DSPATR(HI)
+     A                                  6  47'Billing Mode :'
+     A            SVCBILMD        1A   6  62
+     A                                      DSPATR(HI)
+     A                                  7   2'Sum Assured  :'
+     A            SVCSUMASR      15A   7  17
+     A                                      DSPATR(HI)
+     A                                  7  36'Modal Prem . :'
+     A            SVCMODPRM      15A   7  51
+     A                                      DSPATR(HI)
+     A                                  8   2'Insured Name :'
+     A            SVCINSNAM      40A   8  17
+     A                                      DSPATR(HI)
+     A                                  9   2'Issue Age  . :'
+     A            SVCISSAGE       3A   9  17
+     A                                      DSPATR(HI)
+     A                                  9  24'Attained Age :'
+     A            SVCATTNAG       3A   9  39
+     A                                      DSPATR(HI)
+     A                                  9  46'Issue Date . :'
+     A            SVCISSDT        8A   9  61
+     A                                      DSPATR(HI)
+     A                                 10   2'Expiry Date  :'
+     A            SVCEXPDT        8A  10  17
+     A                                      DSPATR(HI)
+     A                                 10  29'Paid To Date :'
+     A            SVCPAIDTO       8A  10  44
+     A                                      DSPATR(HI)
+     A*---------------------------------------------------------------*
+     A* AMENDMENT INPUT SECTION                                       *
+     A*---------------------------------------------------------------*
+     A          R SVCAMEND
+     A                                 12   2'AMENDMENT REQUEST'
+     A                                      DSPATR(HI UL)
+     A                                 13   2'Amend Type . :'
+     A            SVCAMDTYP       2A  B 13  17
+     A                                      DSPATR(UL)
+     A                                 13  22'(PL/SA/BM/AR/RR/RI)'
+     A                                 14   2'New Plan Code:'
+     A            SVCNWPLAN       5A  B 14  17
+     A                                 14  26'New Sum Assr :'
+     A            SVCNWSA        15A  B 14  42
+     A                                 15   2'New Bill Mode:'
+     A            SVCNWBM         1A  B 15  17
+     A                                      DSPATR(UL)
+     A                                 15  21'(A/S/Q/M)'
+     A*---------------------------------------------------------------*
+     A* AMENDMENT RESULT                                              *
+     A*---------------------------------------------------------------*
+     A          R SVCRESULT
+     A                                 17   2'AMENDMENT RESULT'
+     A                                      DSPATR(HI UL)
+     A                                 18   2'New Modal Prm:'
+     A            SVCNWMDP       15A   18  17
+     A                                      DSPATR(HI)
+     A                                 18  36'Prem Delta . :'
+     A            SVCPREMD       15A   18  51
+     A                                      DSPATR(HI)
+     A                                 19   2'Service Fee  :'
+     A            SVCSVCFE        9A   19  17
+     A                                      DSPATR(HI)
+     A                                 19  30'Amend Status :'
+     A            SVCAMDST        2A   19  45
+     A                                      DSPATR(HI)
+     A                                 20   2'Message  . . :'
+     A            SVCMSG         74A   20  17
+     A                                      COLOR(RED)
+     A*---------------------------------------------------------------*
+     A* FUNCTION KEYS                                                 *
+     A*---------------------------------------------------------------*
+     A          R SVCFKEYS
+     A 90                              23   2'F3=Exit'
+     A 90                                   COLOR(BLU)
+     A 90                              23  12'F12=Cancel'
+     A 90                                   COLOR(BLU)
+     A N90                             23   2'F3=Exit'
+     A N90                                  COLOR(BLU)
+     A N90                             23  12'F6=Apply Amendment'
+     A N90                                  COLOR(BLU)
+     A N90                             23  33'F10=Reinstate'
+     A N90                                  COLOR(BLU)
+     A N90                             23  49'F12=Cancel'
+     A N90                                  COLOR(BLU)

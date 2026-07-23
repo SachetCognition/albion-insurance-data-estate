@@ -1,0 +1,54 @@
+     A*===============================================================*
+     A* FILE:      SVCPF                                             *
+     A* TYPE:      PHYSICAL FILE                                     *
+     A* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             *
+     A* AUTHOR:    R. KOWALSKI                                       *
+     A* DATE:      1998-03-05                                        *
+     A* VERSION:   1.0                                               *
+     A* MODIFIED:  1998-11-14 - Y2K DATE FIELD REVIEW               *
+     A*---------------------------------------------------------------*
+     A* SERVICE AMENDMENTS FILE - ONE RECORD PER AMENDMENT           *
+     A* LIBRARY:   LIFE400                                           *
+     A* CRTPF FILE(LIFE400/SVCPF) SRCFILE(LIFE400/QDDSSRC)          *
+     A*===============================================================*
+     A          R SVCREC                       TEXT('SERVICE AMENDMENT RECORD')
+     A*--- AMENDMENT IDENTIFICATION ---
+     A            SVCID         12A           TEXT('SERVICE REQUEST ID')
+     A                                        COLHDG('SVC' 'ID')
+     A            POLID         12A           TEXT('POLICY ID')
+     A                                        COLHDG('POLICY' 'ID')
+     A*--- AMENDMENT DETAILS ---
+     A            AMDTYPE        2A           TEXT('AMEND TYPE PL/SA/BM/AR/RR/RI')
+     A                                        COLHDG('AMD' 'TYPE')
+     A            AMDSTS         2A           TEXT('AMEND STATUS PE/AP/RJ')
+     A                                        COLHDG('AMD' 'STS')
+     A            SVCFEE         9S 2         TEXT('SERVICE FEE CHARGED')
+     A                                        COLHDG('SVC' 'FEE')
+     A*--- PLAN CHANGE ---
+     A            OLDPLAN        5A           TEXT('OLD PLAN CODE')
+     A                                        COLHDG('OLD' 'PLAN')
+     A            NEWPLAN        5A           TEXT('NEW PLAN CODE')
+     A                                        COLHDG('NEW' 'PLAN')
+     A*--- SUM ASSURED CHANGE ---
+     A            OLDSA         15S 2         TEXT('OLD SUM ASSURED')
+     A                                        COLHDG('OLD' 'SUM ASSR')
+     A            NEWSA         15S 2         TEXT('NEW SUM ASSURED')
+     A                                        COLHDG('NEW' 'SUM ASSR')
+     A*--- BILLING MODE CHANGE ---
+     A            OLDBM          1A           TEXT('OLD BILLING MODE')
+     A                                        COLHDG('OLD' 'BM')
+     A            NEWBM          1A           TEXT('NEW BILLING MODE')
+     A                                        COLHDG('NEW' 'BM')
+     A*--- PREMIUM IMPACT ---
+     A            NEWMODP       15S 2         TEXT('NEW MODAL PREMIUM')
+     A                                        COLHDG('NEW' 'MODAL PREM')
+     A            PREMDLT       15S 2         TEXT('PREMIUM DELTA')
+     A                                        COLHDG('PREM' 'DELTA')
+     A*--- DATES AND AUDIT ---
+     A*Y2K: STORED AS YYYYMMDD
+     A            SVCDATE        8S 0         TEXT('SERVICE DATE YYYYMMDD')
+     A                                        COLHDG('SVC' 'DATE')
+     A            USERID        10A           TEXT('REQUESTING USER ID')
+     A                                        COLHDG('USER' 'ID')
+     A*--- KEY ---
+     A          K SVCID

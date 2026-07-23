@@ -1,0 +1,8 @@
+# etl_batch@albetl01 crontab (prod) - dumped 2026-01. Overlaps Control-M for
+# several jobs; nobody is sure which scheduler "owns" bdx_transfer any more.
+15 3 * * *  /opt/albion/etl/informatica/scripts/run_wf_policy_master   # ALSO in Control-M ALB-DWH-0032
+0  6 1-5 * * /opt/albion/etl/informatica/scripts/bdx_transfer
+30 6 * * *  /opt/albion/etl/sas/run_insurance_sas_pipeline.sh          # ALSO Control-M ALB-DWH-0050
+0  2 * * 0  /opt/albion/etl/informatica/legacy_shared_services/scripts/archive_files
+45 0 * * * /opt/IBM/InformationServer/Server/DSEngine/bin/dsjob -run DS39 LIFE_POLICY_LOAD  # ALSO Control-M ALB-LIF-0005 AND the DS Director scheduler - triple-scheduled
+5  7 * * 1 /opt/IBM/InformationServer/Server/DSEngine/bin/dsjob -run DS39 Bouns_Program_Job

@@ -1,0 +1,25 @@
+/*===============================================================*/
+/* PROGRAM:   LIFEXTR                                            */
+/* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE               */
+/* AUTHOR:    D. NKEMELU (TATA CONSULTANCY - INTEGRATION 2016)   */
+/* DATE:      2016-11-02   VERSION: 1.7                          */
+/* MODIFIED:  2017-02-14 - DATES TRUNCATED TO YYMMDD TO MATCH    */
+/*            THE DATASTAGE JOB SPEC (DS TEAM COULD NOT CHANGE   */
+/*            THE COLUMN IMPORT STAGE IN TIME FOR GO-LIVE).      */
+/*            PIVOT YEAR AGREED AS 40 IN A MEETING; NOT IN SPEC. */
+/*---------------------------------------------------------------*/
+/* NIGHTLY EXTRACT OF POLMST TO IFS STREAM FILE FOR GROUP DWH.   */
+/* CONSUMED BY DATASTAGE JOB LIFE_POLICY_LOAD (SEE /datastage).  */
+/* NOTE: NO ADDRESS/POSTCODE DATA - ADDRMST WAS DESCOPED FROM    */
+/* THE 2016 INTEGRATION AND CORRESPONDENCE ADDRESSES REMAIN      */
+/* ONLY ON THE AS/400. GDPR SAR REQUESTS REQUIRE A 5250 SESSION. */
+/*===============================================================*/
+PGM
+DCL VAR(&OUTFILE)  TYPE(*CHAR) LEN(64) +
+    VALUE('/home/dwhxfer/outbound/POLMSTEX.DAT')
+CPYTOIMPF FROMFILE(LIFE400/POLMST) +
+          TOSTMF(&OUTFILE) MBROPT(*REPLACE) +
+          RCDDLM(*LF) STRDLM(*NONE) FLDDLM(*NONE)
+/* FTP PUT TO ALBETL01 - CREDENTIALS IN QGPL/FTPSCRIPT (PLAINTEXT) */
+SBMJOB CMD(CALL PGM(LIFE400/FTPPUT) PARM(&OUTFILE)) JOB(LIFEFTP)
+ENDPGM

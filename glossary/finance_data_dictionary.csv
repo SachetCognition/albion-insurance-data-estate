@@ -1,0 +1,7 @@
+term,definition,owner,source_of_truth,last_reviewed
+Active Policy,"Policy with status IF AND at least one premium collection in the last 45 days","Finance MI (J. Mercer)","ETL_STAGING_DB.STG_POLICY_360.ACTIVE_POLICY_FLAG",2025-11-03
+Earned Premium,"GWP earned on a straight-line monthly (1/12ths) basis from inception","Finance MI (J. Mercer)","ETL_STAGING_DB.STG_EARNED_PREMIUM.EARNED_PREMIUM",2025-11-03
+Customer,"A party holding an APF banking product; identified by CUSTOMER_ID","Finance MI","CORE_BANKING_DB.CUSTOMERS",2024-06-10
+Gross Written Premium,"Annualised premium at policy level incl. MTAs, excl. IPT","Finance MI","POLICY_ADMIN_DB.POLICY.ANNUAL_PREMIUM_GBP",2025-11-03
+Commission,"Broker commission at booked rate; recalculated monthly in wf_BILLING_PREMIUM_RECON","Finance MI","BILLING_DB.PREMIUM_TRANSACTIONS.COMMISSION_AMT_GBP",2025-02-14
+IPT,"Insurance Premium Tax at 12% (hardcoded in three pipelines - do not change without CAB)","Finance MI","derived",2023-01-20

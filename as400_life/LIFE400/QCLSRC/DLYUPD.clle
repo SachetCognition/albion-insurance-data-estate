@@ -1,0 +1,105 @@
+/*===============================================================*/
+/* PROGRAM:   DLYUPD                                            */
+/* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             */
+/* AUTHOR:    R. KOWALSKI                                       */
+/* DATE:      1998-03-20                                        */
+/* VERSION:   1.2                                               */
+/* MODIFIED:  1998-09-15 - ADDED LAPSE TRANSITION SWEEP        */
+/* MODIFIED:  1998-11-14 - Y2K: PROCESS DATE FROM SYSTEM       */
+/*---------------------------------------------------------------*/
+/* NIGHTLY DAILY UPDATE JOB                                     */
+/* SCHEDULED VIA:                                               */
+/*   ADDJOBSCDE JOB(DLYUPD) CMD(CALL LIFE400/DLYUPD)           */
+/*              FRQ(*WEEKLY) SCDDAY(*ALL) SCDTIME(233000)       */
+/*                                                              */
+/* PROCESSES:                                                   */
+/*   1. SWEEPS POLMST FOR POLICIES IN GRACE PERIOD             */
+/*      - IDENTIFIES PAID-TO DATE PAST DUE                     */
+/*      - UPDATES STATUS: ACTIVE->GRACE->LAPSED                */
+/*   2. SUBMITS SVCBILB FOR EACH POLICY REQUIRING UPDATE       */
+/*   3. SENDS COMPLETION REPORT TO OPERATOR MESSAGE QUEUE      */
+/*                                                              */
+/* NOTE: RUNS IN QBATCH SUBSYSTEM UNDER LIFEJD JOB DESC        */
+/*===============================================================*/
+PGM
+
+/*---------------------------------------------------------------*/
+/* VARIABLE DECLARATIONS                                         */
+/*---------------------------------------------------------------*/
+DCL VAR(&POLID)    TYPE(*CHAR)  LEN(12)
+DCL VAR(&SVCID)    TYPE(*CHAR)  LEN(12)
+DCL VAR(&CURDATE)  TYPE(*CHAR)  LEN(8)
+DCL VAR(&UPDCNT)   TYPE(*DEC)   LEN(7 0) VALUE(0)
+DCL VAR(&LPSECNT)  TYPE(*DEC)   LEN(7 0) VALUE(0)
+DCL VAR(&ERRCNT)   TYPE(*DEC)   LEN(7 0) VALUE(0)
+DCL VAR(&MSGDTA)   TYPE(*CHAR)  LEN(132)
+DCL VAR(&MSGCNT)   TYPE(*CHAR)  LEN(7)
+DCL VAR(&JOBLOG)   TYPE(*CHAR)  LEN(10) VALUE('DLYUPDJL')
+
+/*---------------------------------------------------------------*/
+/* INITIALIZATION                                                */
+/*---------------------------------------------------------------*/
+
+/* ANNOUNCE JOB START */
+/* Y2K: SYSTEM DATE IS YYYYMMDD ON V4R2 AND LATER */
+RTVSYSVAL SYSVAL(QDATE) RTNVAR(&CURDATE)
+
+SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) +
+    MSGDTA('DLYUPD: NIGHTLY UPDATE STARTED ' *CAT &CURDATE) +
+    TOMSGQ(QSYSOPR) MSGTYPE(*INFO)
+
+SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) +
+    MSGDTA('DLYUPD: NIGHTLY UPDATE STARTED ' *CAT &CURDATE) +
+    TOMSGQ(LIFE400/LIFEMSGQ) MSGTYPE(*INFO)
+
+/* SET LIBRARY LIST */
+ADDLIBLE LIB(LIFE400) POSITION(*FIRST)
+MONMSG MSGID(CPF2103)
+
+/* OVERRIDE FILES TO LIFE400 LIBRARY */
+OVRDBF FILE(POLMST) TOFILE(LIFE400/POLMST) OVRSCOPE(*JOB)
+OVRDBF FILE(SVCPF)  TOFILE(LIFE400/SVCPF)  OVRSCOPE(*JOB)
+
+/*---------------------------------------------------------------*/
+/* MAIN PROCESSING LOOP                                          */
+/* NOTE: IN PRODUCTION THIS LOOPS OVER POLMST RECORDS           */
+/* POLICY IDs ARE SUBMITTED TO SVCBILB FOR STATUS EVALUATION    */
+/* THIS STUB DEMONSTRATES THE JOB STRUCTURE; A FULL             */
+/* IMPLEMENTATION WOULD USE AN RPG OR COBOL DRIVER TO READ      */
+/* POLMST SEQUENTIALLY AND CALL SVCBILB FOR EACH RECORD.        */
+/*---------------------------------------------------------------*/
+
+/* SUBMIT STATUS EVALUATION FOR GRACE/LAPSE SWEEP */
+/* PRODUCTION: REPLACE WITH SEQUENTIAL READ OF POLMST           */
+
+CALL PGM(LIFE400/SVCBILB) PARM('*SWEEP     ' '*DLYUPD     ')
+MONMSG MSGID(CPF0000) EXEC(DO)
+    CHGVAR VAR(&ERRCNT) VALUE(&ERRCNT + 1)
+    SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) +
+        MSGDTA('DLYUPD: SWEEP ERROR - CHECK JOBLOG') +
+        TOMSGQ(LIFE400/LIFEMSGQ) MSGTYPE(*DIAG)
+ENDDO
+
+/*---------------------------------------------------------------*/
+/* COMPLETION REPORT                                             */
+/*---------------------------------------------------------------*/
+
+CHGVAR VAR(&MSGCNT) VALUE(&UPDCNT)
+CHGVAR VAR(&MSGDTA) VALUE('DLYUPD COMPLETE ' *CAT &CURDATE +
+    *BCAT '- ERRORS:' *BCAT &ERRCNT)
+
+SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA(&MSGDTA) +
+    TOMSGQ(QSYSOPR) MSGTYPE(*INFO)
+
+SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA(&MSGDTA) +
+    TOMSGQ(LIFE400/LIFEMSGQ) MSGTYPE(*INFO)
+
+/* CLEAN UP */
+DLTOVR FILE(POLMST) LVL(*JOB)
+DLTOVR FILE(SVCPF)  LVL(*JOB)
+MONMSG MSGID(CPF9841)
+
+RMVLIBLE LIB(LIFE400)
+MONMSG MSGID(CPF2105)
+
+ENDPGM

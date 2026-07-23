@@ -1,0 +1,115 @@
+     A*===============================================================*
+     A* FILE:      CLMDSPF                                           *
+     A* TYPE:      DISPLAY FILE                                      *
+     A* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             *
+     A* AUTHOR:    D. BRENNAN                                        *
+     A* DATE:      1997-11-10                                        *
+     A* VERSION:   1.2                                               *
+     A* MODIFIED:  1998-11-14 - Y2K DATE FIELD REVIEW               *
+     A*---------------------------------------------------------------*
+     A* CLAIMS ENTRY AND ADJUDICATION SCREEN                         *
+     A* CRTDSPF FILE(LIFE400/CLMDSPF) SRCFILE(LIFE400/QDDSSRC)      *
+     A*===============================================================*
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      PRINT
+     A                                      CA03(03 'EXIT')
+     A                                      CA06(06 'SUBMIT CLAIM')
+     A                                      CA12(12 'CANCEL')
+     A*---------------------------------------------------------------*
+     A* CLAIM HEADER / POLICY LOOKUP                                  *
+     A*---------------------------------------------------------------*
+     A          R CLMHDR
+     A                                  1   2'LIFE400'
+     A                                      DSPATR(HI)
+     A                                  1  22'CLAIMS ADJUDICATION'
+     A                                      DSPATR(HI)
+     A                                  1  66'CLMMNT'
+     A                                  3   2'Claim ID   . :'
+     A            CLMID          12A  B  3  17
+     A                                  3  35'Policy ID  . :'
+     A            CLPOLID        12A  B  3  50
+     A                                  4   2'Process Date :'
+     A*Y2K: YYYYMMDD
+     A            CLPRCDT         8A  B  4  17
+     A                                  4  35'Policy Status:'
+     A            CLPOLSTS        2A   4  51
+     A                                      DSPATR(HI)
+     A                                  5   2'Insured Name :'
+     A            CLINSNAM       40A   5  17
+     A                                      DSPATR(HI)
+     A*---------------------------------------------------------------*
+     A* CLAIM DETAILS                                                 *
+     A*---------------------------------------------------------------*
+     A          R CLMDETAIL
+     A                                  7   2'CLAIM DETAILS'
+     A                                      DSPATR(HI UL)
+     A                                  8   2'Claim Type . :'
+     A            CLTYPE          2A  B  8  17
+     A                                      DSPATR(UL)
+     A                                  8  22'(DT=Death)'
+     A                                  8  35'Cause of Death:'
+     A            CLCAUSD         3A  B  8  51
+     A                                      DSPATR(UL)
+     A                                  8  57'(NAT/ACC/SUI/HOM/UNK)'
+     A                                  9   2'Date of Death:'
+     A*Y2K: YYYYMMDD
+     A            CLDTHDTC        8A  B  9  17
+     A                                 10   2'Beneficiary  :'
+     A            CLBENNAM       40A  B 10  17
+     A                                 11   2'Relation   . :'
+     A            CLBENREL       20A  B 11  17
+     A                                 11  40'Payment Mode :'
+     A            CLPYMTMD        1A  B 11  56
+     A                                      DSPATR(UL)
+     A                                 11  60'(C=Chk A=ACH)'
+     A*---------------------------------------------------------------*
+     A* DOCUMENT CHECKLIST                                            *
+     A*---------------------------------------------------------------*
+     A          R CLMDOCS
+     A                                 13   2'DOCUMENTS RECEIVED'
+     A                                      DSPATR(HI UL)
+     A                                 14   2'Death Cert . :'
+     A            CLDTHCRT        1A  B 14  17
+     A                                      DSPATR(UL)
+     A                                 14  21'(Y/N)'
+     A                                 14  30'Claim Form . :'
+     A            CLCLMFRM        1A  B 14  45
+     A                                      DSPATR(UL)
+     A                                 14  49'(Y/N)'
+     A                                 15   2'ID Proof   . :'
+     A            CLIDPROF        1A  B 15  17
+     A                                      DSPATR(UL)
+     A                                 15  21'(Y/N)'
+     A                                 15  30'Medical Recs :'
+     A            CLMEDRCS        1A  B 15  45
+     A                                      DSPATR(UL)
+     A                                 15  49'(Y/N)'
+     A*---------------------------------------------------------------*
+     A* RESULT SECTION                                                *
+     A*---------------------------------------------------------------*
+     A          R CLMRESULT
+     A                                 17   2'ADJUDICATION RESULT'
+     A                                      DSPATR(HI UL)
+     A                                 18   2'Decision   . :'
+     A            CLMDEC          1A   18  17
+     A                                      DSPATR(HI)
+     A                                 18  21'(A=Approved R=Rejected P=Pending)'
+     A                                 19   2'Payment Amt  :'
+     A            CLPYMTAM       15A   19  17
+     A                                      DSPATR(HI)
+     A                                 19  36'Invest Status:'
+     A            CLINVSTS        1A   19  51
+     A                                      DSPATR(HI)
+     A                                 20   2'Message  . . :'
+     A            CLMSG          74A   20  17
+     A                                      COLOR(RED)
+     A*---------------------------------------------------------------*
+     A* FUNCTION KEYS                                                 *
+     A*---------------------------------------------------------------*
+     A          R CLMFKEYS
+     A                                 23   2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23  12'F6=Submit Claim'
+     A                                      COLOR(BLU)
+     A                                 23  30'F12=Cancel'
+     A                                      COLOR(BLU)

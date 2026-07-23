@@ -1,0 +1,81 @@
+     A*===============================================================*
+     A* FILE:      POLMST                                            *
+     A* TYPE:      PHYSICAL FILE                                     *
+     A* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             *
+     A* AUTHOR:    R. KOWALSKI                                       *
+     A* DATE:      1997-09-12                                        *
+     A* VERSION:   1.2                                               *
+     A* MODIFIED:  1998-11-14 - Y2K DATE FIELD REVIEW               *
+     A*---------------------------------------------------------------*
+     A* POLICY MASTER FILE - ONE RECORD PER POLICY                   *
+     A* LIBRARY:   LIFE400                                           *
+     A* CRTPF FILE(LIFE400/POLMST) SRCFILE(LIFE400/QDDSSRC)         *
+     A*===============================================================*
+     A          R POLMSTREC                    TEXT('POLICY MASTER RECORD')
+     A*--- CONTROL FIELDS ---
+     A            POLID         12A           TEXT('POLICY ID')
+     A                                        COLHDG('POLICY' 'ID')
+     A            APPID         12A           TEXT('APPLICATION ID')
+     A                                        COLHDG('APPL' 'ID')
+     A*Y2K: STORED AS YYYYMMDD (8-DIGIT NUMERIC)
+     A            PRCDATE        8S 0         TEXT('PROCESS DATE YYYYMMDD')
+     A                                        COLHDG('PROCESS' 'DATE')
+     A            PLANCD         5A           TEXT('PLAN CODE')
+     A                                        COLHDG('PLAN' 'CODE')
+     A            CNTRSTS        2A           TEXT('CONTRACT STATUS')
+     A                                        COLHDG('CNTR' 'STS')
+     A            ISSCHN         2A           TEXT('ISSUE CHANNEL')
+     A                                        COLHDG('ISS' 'CHNL')
+     A            CURCD          3A           TEXT('CURRENCY CODE')
+     A                                        COLHDG('CUR' 'CD')
+     A*--- INSURED FIELDS ---
+     A            INSNAME       40A           TEXT('INSURED NAME')
+     A                                        COLHDG('INSURED NAME')
+     A*Y2K: STORED AS YYYYMMDD
+     A            INSDOB         8S 0         TEXT('DATE OF BIRTH YYYYMMDD')
+     A                                        COLHDG('DATE OF' 'BIRTH')
+     A            ISSAGE         3S 0         TEXT('ISSUE AGE')
+     A                                        COLHDG('ISS' 'AGE')
+     A            GENDER         1A           TEXT('GENDER M/F')
+     A                                        COLHDG('GEN')
+     A            SMOKER         1A           TEXT('SMOKER STATUS S/N')
+     A                                        COLHDG('SMK')
+     A            OCCLAS         1S 0         TEXT('OCCUPATION CLASS 1-4')
+     A                                        COLHDG('OCC' 'CLS')
+     A            UWCLAS         2A           TEXT('UW CLASS PR/ST/TB/DP')
+     A                                        COLHDG('UW' 'CLS')
+     A            HIRAVOC        1A           TEXT('HIGH RISK AVOCATION Y/N')
+     A                                        COLHDG('HI' 'RISK')
+     A            FLTXTRA        6S 4         TEXT('FLAT EXTRA RATE PER 1000')
+     A                                        COLHDG('FLAT' 'EXTRA')
+     A*--- BENEFIT FIELDS ---
+     A            SUMASSR       15S 2         TEXT('SUM ASSURED')
+     A                                        COLHDG('SUM' 'ASSURED')
+     A            LOANBAL       15S 2         TEXT('POLICY LOAN BALANCE')
+     A                                        COLHDG('LOAN' 'BAL')
+     A            BILMODE        1A           TEXT('BILLING MODE A/S/Q/M')
+     A                                        COLHDG('BIL' 'MOD')
+     A*--- PREMIUM FIELDS ---
+     A            ANPREM        15S 2         TEXT('TOTAL ANNUAL PREMIUM')
+     A                                        COLHDG('ANNUAL' 'PREM')
+     A            MODPREM       15S 2         TEXT('MODAL PREMIUM')
+     A                                        COLHDG('MODAL' 'PREM')
+     A            OUTPREM       15S 2         TEXT('OUTSTANDING PREMIUM')
+     A                                        COLHDG('OUTST' 'PREM')
+     A*--- DATE FIELDS ---
+     A*Y2K: ALL DATES YYYYMMDD 8-DIGIT
+     A            ISSDATE        8S 0         TEXT('ISSUE DATE YYYYMMDD')
+     A                                        COLHDG('ISSUE' 'DATE')
+     A            EFFDATE        8S 0         TEXT('EFFECTIVE DATE YYYYMMDD')
+     A                                        COLHDG('EFF' 'DATE')
+     A            PAIDTO         8S 0         TEXT('PAID TO DATE YYYYMMDD')
+     A                                        COLHDG('PAID TO' 'DATE')
+     A            EXPDATE        8S 0         TEXT('EXPIRY DATE YYYYMMDD')
+     A                                        COLHDG('EXPIRY' 'DATE')
+     A            LSTMNT         8S 0         TEXT('LAST MAINT DATE YYYYMMDD')
+     A                                        COLHDG('LAST' 'MAINT')
+     A*--- AUDIT ---
+     A            LSTUSR        10A           TEXT('LAST ACTION USER')
+     A                                        COLHDG('LAST' 'USER')
+     A*--- KEY ---
+     A          K POLID

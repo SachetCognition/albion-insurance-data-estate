@@ -1,0 +1,70 @@
+/* ============================================================================= */
+/* BTEQ Script: 05_stg_claims_summary.bteq                                       */
+/* Purpose:     Claim-level staging w/ frequency + severity features for SAS.    */
+/* Source:      CLAIMS_DB.CLAIM, POLICY_ADMIN_DB.POLICY, PARTY                   */
+/* Target:      ETL_STAGING_DB.STG_CLAIMS_SUMMARY                                */
+/* Schedule:    Daily, 05:00 GMT                                                 */
+/* WARNING:     LOSS_DT arrives as DD/MM/YYYY *text*. Conversion below assumes   */
+/*              UK format. Informatica EXP_CLAIM_DATES assumes the same field    */
+/*              is MM/DD/YYYY when SOURCE_SYSTEM='GUIDEWIRE_CC'. INC0067812      */
+/*              raised 2023, still open.                                         */
+/* ============================================================================= */
+
+.SET ERRORLEVEL 3807 SEVERITY 0;
+.SET WIDTH 254;
+
+.LOGON ${TD_SERVER}/${TD_USERNAME},;
+
+DROP TABLE ETL_STAGING_DB.STG_CLAIMS_SUMMARY;
+.IF ERRORCODE <> 0 THEN .GOTO CONT1;
+.LABEL CONT1;
+
+CREATE MULTISET TABLE ETL_STAGING_DB.STG_CLAIMS_SUMMARY AS
+(
+    SELECT
+        c.CLAIM_NO,
+        c.POLICY_NO,
+        c.CLAIMANT_PARTY_ID,
+        p.PRODUCT_CD,
+        p.CHANNEL,
+        /* DD/MM/YYYY text -> DATE. */
+        CAST(SUBSTR(c.LOSS_DT,7,4) || '-' ||
+             SUBSTR(c.LOSS_DT,4,2) || '-' ||
+             SUBSTR(c.LOSS_DT,1,2) AS DATE)              AS LOSS_DT,
+        c.NOTIFICATION_DT,
+        c.NOTIFICATION_DT -
+        CAST(SUBSTR(c.LOSS_DT,7,4) || '-' ||
+             SUBSTR(c.LOSS_DT,4,2) || '-' ||
+             SUBSTR(c.LOSS_DT,1,2) AS DATE)              AS NOTIF_LAG_DAYS,
+        c.CAUSE_CD,
+        c.CLAIM_STATUS,
+        c.INCURRED_AMT,
+        c.PAID_AMT,
+        c.OUTSTANDING_RESERVE,
+        /* Normalise fraud flag: LEGACY_CLM sends 'S' (suspected) which         */
+        /* Guidewire cannot represent. Mapped to 'Y' here; mapped to 'N' in     */
+        /* the Informatica load (EXP_CLAIM_FLAGS). Fraud MI therefore differs.  */
+        CASE WHEN c.FRAUD_FLAG IN ('Y','S') THEN 'Y' ELSE 'N' END
+                                                          AS FRAUD_FLAG_NORM,
+        c.HANDLER_ID,
+        c.SOURCE_SYSTEM,
+
+        COUNT(*)        OVER (PARTITION BY c.CLAIMANT_PARTY_ID) AS PARTY_CLAIM_COUNT,
+        SUM(c.INCURRED_AMT)
+                        OVER (PARTITION BY c.CLAIMANT_PARTY_ID) AS PARTY_TOTAL_INCURRED,
+        CURRENT_TIMESTAMP(0) AS LOAD_TS
+    FROM CLAIMS_DB.CLAIM c
+    LEFT JOIN POLICY_ADMIN_DB.POLICY p
+           ON p.POLICY_NO = c.POLICY_NO
+) WITH DATA
+PRIMARY INDEX (CLAIM_NO);
+
+.IF ERRORCODE <> 0 THEN .GOTO ERR;
+
+COLLECT STATISTICS ON ETL_STAGING_DB.STG_CLAIMS_SUMMARY COLUMN (CLAIM_NO);
+
+SELECT 'STG_CLAIMS_SUMMARY rows: ' || TRIM(COUNT(*))
+FROM ETL_STAGING_DB.STG_CLAIMS_SUMMARY;
+
+.LOGOFF; .QUIT 0;
+.LABEL ERR; .LOGOFF; .QUIT 8;

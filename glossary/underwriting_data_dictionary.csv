@@ -1,0 +1,6 @@
+term,definition,owner,source_of_truth,last_reviewed
+Active Policy,"Policy with status IF or RN, irrespective of collections","Underwriting (K. Sharma)","Informatica EXP_POLICY_FLAGS (wf_POLICY_MASTER_DAILY)",2024-08-19
+Policyholder,"The party bound on the policy schedule; identified by PARTY_ID (POLARIS) or CLIENT_NO (legacy)","Underwriting","POLICY_ADMIN_DB.PARTY",2024-08-19
+Earned Premium,"Not a UW measure - refer to Finance. (UW rate monitoring nonetheless uses the actuarial 365ths figure.)","Underwriting","n/a",2023-05-02
+Exposure,"Vehicle-years / home-years on risk in period","Underwriting","spreadsheet: UW_Exposure_Model_v14_FINAL(2).xlsx",2022-11-30
+Product,"6 live product codes: MOT HOM PET TRV CPM CLB. LEGACY_PAS still emits retired codes CAR, HSE mapped on ingest (mapping table lost; hardcoded in a session pre-SQL)","Underwriting","POLICY_ADMIN_DB.POLICY.PRODUCT_CD",2024-08-19

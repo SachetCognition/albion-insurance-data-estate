@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PolicyInquiryService v1.3 (2011, contract frozen). Fronts pkg_policy_inquiry.
+     Consumers refuse to move off rpc/encoded. Response reuses field name
+     'CustomerRef' for two different identifier schemes (see package body). -->
+<definitions name="PolicyInquiryService"
+    targetNamespace="http://ws.albion-general.co.uk/policy/v1"
+    xmlns="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:tns="http://ws.albion-general.co.uk/policy/v1">
+  <message name="getPolicySummaryRequest">
+    <part name="policyNo" type="xsd:string"/>
+  </message>
+  <message name="getPolicySummaryResponse">
+    <part name="policyNo" type="xsd:string"/>
+    <part name="customerRef" type="xsd:string"/>
+    <part name="productCd" type="xsd:string"/>
+    <part name="policyStatus" type="xsd:string"/>
+    <part name="activePolicyFlag" type="xsd:string"/>
+    <part name="annualPremiumGbp" type="xsd:decimal"/>
+  </message>
+  <portType name="PolicyInquiryPortType">
+    <operation name="getPolicySummary">
+      <input message="tns:getPolicySummaryRequest"/>
+      <output message="tns:getPolicySummaryResponse"/>
+    </operation>
+  </portType>
+  <binding name="PolicyInquiryBinding" type="tns:PolicyInquiryPortType">
+    <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="getPolicySummary">
+      <soap:operation soapAction="getPolicySummary"/>
+      <input><soap:body use="encoded" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+      <output><soap:body use="encoded" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+    </operation>
+  </binding>
+  <service name="PolicyInquiryService">
+    <port name="PolicyInquiryPort" binding="tns:PolicyInquiryBinding">
+      <soap:address location="http://esb-prod.albion.internal:8080/services/PolicyInquiry"/>
+    </port>
+  </service>
+</definitions>

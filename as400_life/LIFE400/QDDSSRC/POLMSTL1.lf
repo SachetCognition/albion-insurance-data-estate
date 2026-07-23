@@ -1,0 +1,14 @@
+     A*===============================================================*
+     A* FILE:      POLMSTL1                                          *
+     A* TYPE:      LOGICAL FILE                                      *
+     A* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             *
+     A* AUTHOR:    R. KOWALSKI                                       *
+     A* DATE:      1997-09-12                                        *
+     A* VERSION:   1.0                                               *
+     A*---------------------------------------------------------------*
+     A* LOGICAL VIEW OVER POLMST - KEYED BY POLICY ID               *
+     A* USED FOR RANDOM ACCESS BY ALL ONLINE AND BATCH PROGRAMS      *
+     A* CRTLF FILE(LIFE400/POLMSTL1) SRCFILE(LIFE400/QDDSSRC)       *
+     A*===============================================================*
+     A          R POLMSTREC                    PFILE(POLMST)
+     A          K POLID

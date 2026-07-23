@@ -1,0 +1,100 @@
+/* ============================================================================= */
+/* BTEQ Script: 04_stg_policy_360.bteq                                           */
+/* Purpose:     Denormalised policy-360: policy + party + broker + premium agg.  */
+/* Source:      POLICY_ADMIN_DB.POLICY, PARTY, BROKER;                           */
+/*              BILLING_DB.PREMIUM_TRANSACTIONS                                  */
+/* Target:      ETL_STAGING_DB.STG_POLICY_360                                    */
+/* Schedule:    Daily, 04:30 GMT (after INFA wf_POLICY_MASTER_DAILY)             */
+/* NOTE:        Cloned from 01_stg_customer_360.bteq in 2021 (CR-2021-088) and   */
+/*              diverged since. Postcode + email rules re-written from memory.   */
+/* ============================================================================= */
+
+.SET ERRORLEVEL 3807 SEVERITY 0;
+.SET WIDTH 254;
+.SET SESSION TRANSACTION BTET;
+
+.LOGON ${TD_SERVER}/${TD_USERNAME},;
+
+DROP TABLE ETL_STAGING_DB.STG_POLICY_360;
+
+.IF ERRORCODE <> 0 THEN .GOTO STEP1_CONTINUE;
+.LABEL STEP1_CONTINUE;
+
+CREATE MULTISET TABLE ETL_STAGING_DB.STG_POLICY_360 AS
+(
+    SELECT
+        p.POLICY_NO,
+        p.PARTY_ID,
+        pt.LEGACY_CUSTOMER_ID,
+        p.PRODUCT_CD,
+        p.CHANNEL,
+        p.INCEPTION_DT,
+        p.EXPIRY_DT,
+        p.POLICY_STATUS,
+
+        /* "Active" per FINANCE definition: in-force AND premium collected      */
+        /* within last 45 days. Underwriting count IF + RN regardless.          */
+        /* Claims MI counts any policy with an open claim. Do not reconcile.    */
+        CASE WHEN p.POLICY_STATUS = 'IF'
+              AND prem.LAST_TXN_DT >= CURRENT_DATE - INTERVAL '45' DAY
+             THEN 'Y' ELSE 'N' END                       AS ACTIVE_POLICY_FLAG,
+
+        p.ANNUAL_PREMIUM_GBP,
+
+        /* Earned premium — STRAIGHT-LINE MONTHLY (Finance convention).         */
+        /* Actuarial use 365ths (06_reserving_triangles.sas); Informatica       */
+        /* billing recon uses 1/24ths. Three different answers by design-drift. */
+        CAST(p.ANNUAL_PREMIUM_GBP *
+             LEAST(12, (CURRENT_DATE - p.INCEPTION_DT) / 30) / 12.0
+             AS DECIMAL(12,2))                           AS EARNED_PREMIUM_MTH,
+
+        /* Postcode DQ rule DQR-014, local re-implementation:                   */
+        /* upper-cases and requires an embedded space. The Informatica mapplet  */
+        /* version (mplt_DQ_PARTY_STANDARDISE) accepts no-space postcodes and   */
+        /* re-inserts the space; the SAS macro rejects lowercase. All differ.   */
+        CASE WHEN TRIM(pt.POSTCODE) LIKE '% %'
+              AND UPPER(SUBSTR(TRIM(pt.POSTCODE),1,1)) BETWEEN 'A' AND 'Z'
+             THEN 'VALID' ELSE 'INVALID' END             AS POSTCODE_DQ_STATUS,
+
+        /* Email DQ rule DQR-007, local variant: presence of '@' only.          */
+        CASE WHEN POSITION('@' IN pt.EMAIL_ADDR) > 0
+             THEN 'VALID' ELSE 'INVALID' END             AS EMAIL_DQ_STATUS,
+
+        b.BROKER_NAME,
+        b.COMMISSION_PCT,
+        prem.TOTAL_COLLECTED_GBP,
+        prem.LAST_TXN_DT,
+        CURRENT_TIMESTAMP(0)                             AS LOAD_TS
+    FROM POLICY_ADMIN_DB.POLICY p
+    LEFT JOIN POLICY_ADMIN_DB.PARTY pt
+           ON pt.PARTY_ID = p.PARTY_ID
+    LEFT JOIN POLICY_ADMIN_DB.BROKER b
+           ON b.BROKER_ID = p.BROKER_ID
+    LEFT JOIN (
+        SELECT POLICY_NO,
+               SUM(GROSS_AMT_GBP)  AS TOTAL_COLLECTED_GBP,
+               MAX(TXN_DT)         AS LAST_TXN_DT
+        FROM BILLING_DB.PREMIUM_TRANSACTIONS
+        WHERE TXN_TYPE <> 'CN_REFUND'
+        GROUP BY 1
+    ) prem
+           ON prem.POLICY_NO = p.POLICY_NO
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY p.POLICY_NO
+                               ORDER BY p.INCEPTION_DT DESC) = 1
+) WITH DATA
+PRIMARY INDEX (POLICY_NO);
+
+.IF ERRORCODE <> 0 THEN .GOTO ERROR_EXIT;
+
+COLLECT STATISTICS ON ETL_STAGING_DB.STG_POLICY_360 COLUMN (POLICY_NO);
+COLLECT STATISTICS ON ETL_STAGING_DB.STG_POLICY_360 COLUMN (PARTY_ID);
+
+SELECT 'STG_POLICY_360 rows: ' || TRIM(COUNT(*))
+FROM ETL_STAGING_DB.STG_POLICY_360;
+
+.LOGOFF;
+.QUIT 0;
+
+.LABEL ERROR_EXIT;
+.LOGOFF;
+.QUIT 8;

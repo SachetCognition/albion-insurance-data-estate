@@ -1,0 +1,147 @@
+     A*===============================================================*
+     A* FILE:      NBUWDSPF                                          *
+     A* TYPE:      DISPLAY FILE                                      *
+     A* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             *
+     A* AUTHOR:    R. KOWALSKI                                       *
+     A* DATE:      1997-09-15                                        *
+     A* VERSION:   1.3                                               *
+     A* MODIFIED:  1998-04-10 - ADDED RIDER SECTION                 *
+     A*            1998-11-14 - Y2K DATE FIELD REVIEW               *
+     A*---------------------------------------------------------------*
+     A* NEW BUSINESS / POLICY ISSUANCE SCREEN                        *
+     A* CRTDSPF FILE(LIFE400/NBUWDSPF) SRCFILE(LIFE400/QDDSSRC)     *
+     A*===============================================================*
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      PRINT
+     A                                      CA03(03 'EXIT')
+     A                                      CA05(05 'REFRESH')
+     A                                      CA06(06 'ISSUE POLICY')
+     A                                      CA12(12 'CANCEL')
+     A                                      CA04(04 'PLAN CODE PROMPT')
+     A*---------------------------------------------------------------*
+     A* HEADER RECORD - POLICY / APPLICATION IDS                     *
+     A*---------------------------------------------------------------*
+     A          R NBHDR
+     A                                  1   2'LIFE400'
+     A                                      DSPATR(HI)
+     A                                  1  22'NEW BUSINESS - POLICY ISSUANCE'
+     A                                      DSPATR(HI)
+     A                                  1  66'NBUWMNT'
+     A                                  3   2'Policy ID  . .'
+     A            NBPOLID        12A  B  3  17
+     A                                  3  35'Application ID:'
+     A            NBAPPID        12A  B  3  51
+     A                                  4   2'Plan Code  . .'
+     A            NBPLANC         5A  B  4  17
+     A                                  4  35'Process Date . :'
+     A*Y2K: YYYYMMDD - 8 DIGIT
+     A            NBPRCDT         8A  B  4  52
+     A                                  4  65'(F4=Prompt)'
+     A                                      COLOR(BLU)
+     A                                  5   2'Issue Channel :'
+     A            NBISSCHN        2A  B  5  17
+     A                                      DSPATR(UL)
+     A                                  5  22'(BR/AG/ON)'
+     A                                  5  35'Currency . . :'
+     A            NBCURCD         3A  B  5  51
+     A*---------------------------------------------------------------*
+     A* INSURED SECTION                                               *
+     A*---------------------------------------------------------------*
+     A          R NBINSKD
+     A                                  7   2'INSURED DETAILS'
+     A                                      DSPATR(HI UL)
+     A                                  8   2'Name . . . . :'
+     A            NBINSNAM       40A  B  8  17
+     A                                  9   2'Date of Birth:'
+     A*Y2K: YYYYMMDD
+     A            NBINSDOB        8A  B  9  17
+     A                                  9  28'Gender . . . :'
+     A            NBGENDER        1A  B  9  43
+     A                                      DSPATR(UL)
+     A                                  9  47'(M/F)'
+     A                                  9  55'Smoker . . . :'
+     A            NBSMOKER        1A  B  9  70
+     A                                      DSPATR(UL)
+     A                                  9  74'(S/N)'
+     A                                 10   2'Occ Class  . :'
+     A            NBOCCLAS        1A  B 10  17
+     A                                      DSPATR(UL)
+     A                                 10  21'(1=Prof 2=Std 3=Haz 4=Sev)'
+     A                                 11   2'UW Class   . :'
+     A            NBUWCLAS        2A  B 11  17
+     A                                      DSPATR(UL)
+     A                                 11  22'(PR/ST/TB/DP - set by system)'
+     A                                 12   2'Hi-Risk Avoc :'
+     A            NBHIRAVOC       1A  B 12  17
+     A                                      DSPATR(UL)
+     A                                 12  21'(Y/N)'
+     A                                 12  28'Flat Extra . :'
+     A            NBFLTXTR        6A  B 12  43
+     A                                 12  52'(rate per 1000)'
+     A*---------------------------------------------------------------*
+     A* BENEFIT SECTION                                               *
+     A*---------------------------------------------------------------*
+     A          R NBBENEFIT
+     A                                 14   2'BENEFIT DETAILS'
+     A                                      DSPATR(HI UL)
+     A                                 15   2'Sum Assured  :'
+     A            NBSUMASR       15A  B 15  17
+     A                                 15  36'Billing Mode :'
+     A            NBBILMOD        1A  B 15  51
+     A                                      DSPATR(UL)
+     A                                 15  55'(A/S/Q/M)'
+     A*---------------------------------------------------------------*
+     A* RIDER SECTION                                                 *
+     A*---------------------------------------------------------------*
+     A          R NBRIDERS
+     A                                 17   2'RIDERS (MAX 5)'
+     A                                      DSPATR(HI UL)
+     A                                 18   2'Code       Sum Assured  Status'
+     A                                      DSPATR(HI)
+     A                                 19   2'Rider 1:'
+     A            NBRID1CD        5A  B 19  11
+     A            NBRID1SA       15A  B 19  17
+     A            NBRID1ST        1A   19  34
+     A                                 20   2'Rider 2:'
+     A            NBRID2CD        5A  B 20  11
+     A            NBRID2SA       15A  B 20  17
+     A            NBRID2ST        1A   20  34
+     A                                 21   2'Rider 3:'
+     A            NBRID3CD        5A  B 21  11
+     A            NBRID3SA       15A  B 21  17
+     A            NBRID3ST        1A   21  34
+     A*---------------------------------------------------------------*
+     A* RESULT SECTION                                                *
+     A*---------------------------------------------------------------*
+     A          R NBRESULT
+     A                                 17   2'RESULT'
+     A                                      DSPATR(HI UL)
+     A                                 18   2'Return Code  :'
+     A            NBRETCD         2A   18  17
+     A                                      DSPATR(HI)
+     A                                 18  22'Status . . . :'
+     A            NBCNTRST        2A   18  37
+     A                                      DSPATR(HI)
+     A                                 19   2'Modal Premium:'
+     A            NBMODPRM       15A   19  17
+     A                                      DSPATR(HI)
+     A                                 19  36'Annual Prem  :'
+     A            NBANPREM       15A   19  51
+     A                                      DSPATR(HI)
+     A                                 20   2'Message  . . :'
+     A            NBMSG          74A   20  17
+     A                                      COLOR(RED)
+     A*---------------------------------------------------------------*
+     A* FUNCTION KEY LINE                                             *
+     A*---------------------------------------------------------------*
+     A          R NBFKEYS
+     A                                 23   2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23  12'F5=Refresh'
+     A                                      COLOR(BLU)
+     A                                 23  25'F6=Issue Policy'
+     A                                      COLOR(BLU)
+     A                                 23  43'F12=Cancel'
+     A                                      COLOR(BLU)
+     A                                 23  56'F4=Plan Prompt'
+     A                                      COLOR(BLU)

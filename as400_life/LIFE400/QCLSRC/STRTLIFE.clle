@@ -1,0 +1,43 @@
+/*===============================================================*/
+/* PROGRAM:   STRTLIFE                                           */
+/* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE              */
+/* AUTHOR:    R. KOWALSKI                                        */
+/* DATE:      1997-09-12                                         */
+/* VERSION:   1.1                                                */
+/* MODIFIED:  1998-04-20 - ADD LIFE400 TO LIB LIST IF MISSING   */
+/*---------------------------------------------------------------*/
+/* START LIFE400 INTERACTIVE SESSION                             */
+/* ADDS LIFE400 LIBRARY TO JOB LIBRARY LIST IF NOT PRESENT,     */
+/* THEN CALLS THE MAIN MENU PROGRAM.                             */
+/* ENTRY POINT FOR ALL INTERACTIVE LIFE400 SESSIONS.            */
+/*                                                               */
+/* TO CONFIGURE IN USER PROFILE:                                 */
+/*   CHGUSRPRF USRPRF(username) INLPGM(LIFE400/STRTLIFE)        */
+/* OR ADD AS MENU OPTION IN QSYS/MAIN.                          */
+/*===============================================================*/
+PGM
+
+DCL VAR(&LIFINLIB) TYPE(*CHAR) LEN(10)
+DCL VAR(&MSGDTA)   TYPE(*CHAR) LEN(80)
+
+/* CHECK IF LIFE400 IS ALREADY ON LIBRARY LIST */
+RTVJOBA CURLIB(&LIFINLIB)
+
+/* ADD LIFE400 TO JOB LIBRARY LIST */
+ADDLIBLE LIB(LIFE400) POSITION(*FIRST)
+MONMSG MSGID(CPF2103) /* ALREADY ON LIB LIST - IGNORE */
+
+/* ANNOUNCE SESSION START TO SYSTEM OPERATOR */
+CHGVAR VAR(&MSGDTA) VALUE('LIFE400 SESSION STARTED BY ' *CAT &LIFINLIB)
+SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA(&MSGDTA) +
+    TOMSGQ(LIFE400/LIFEMSGQ) MSGTYPE(*INFO)
+MONMSG MSGID(CPF0000) /* NON-FATAL - CONTINUE IF MSGQ NOT FOUND */
+
+/* LAUNCH MAIN MENU */
+CALL PGM(LIFE400/MAINMENU)
+
+/* SESSION ENDED - CLEAN UP */
+RMVLIBLE LIB(LIFE400)
+MONMSG MSGID(CPF2105) /* NOT ON LIB LIST - IGNORE */
+
+ENDPGM

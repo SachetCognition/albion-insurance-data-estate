@@ -1,0 +1,51 @@
+/* ============================================================================= */
+/* BTEQ Script: 06_stg_earned_premium.bteq                                       */
+/* Purpose:     Monthly earned/unearned premium by policy for Finance close.     */
+/* Target:      ETL_STAGING_DB.STG_EARNED_PREMIUM                                */
+/* Schedule:    Monthly, working day 2, 06:00 GMT                                */
+/* METHOD:      Straight-line monthly 1/12ths (Finance).                         */
+/*              !!! Actuarial compute 365ths in SAS (06_reserving_triangles),    */
+/*              Informatica wf_BILLING_PREMIUM_RECON computes 1/24ths for the    */
+/*              same figure. Month-end reconciliation is manual (Xls, J.Mercer). */
+/* ============================================================================= */
+
+.SET ERRORLEVEL 3807 SEVERITY 0;
+.LOGON ${TD_SERVER}/${TD_USERNAME},;
+
+DROP TABLE ETL_STAGING_DB.STG_EARNED_PREMIUM;
+.IF ERRORCODE <> 0 THEN .GOTO CONT1;
+.LABEL CONT1;
+
+CREATE MULTISET TABLE ETL_STAGING_DB.STG_EARNED_PREMIUM AS
+(
+    SELECT
+        p.POLICY_NO,
+        p.UW_YEAR,
+        p.PRODUCT_CD,
+        p.ANNUAL_PREMIUM_GBP                                    AS GWP,
+        p.ANNUAL_PREMIUM_GBP * p.IPT_RATE                       AS IPT_AMT,
+        CAST(p.ANNUAL_PREMIUM_GBP *
+             LEAST(12, GREATEST(0,(CURRENT_DATE - p.INCEPTION_DT) / 30)) / 12.0
+             AS DECIMAL(12,2))                                  AS EARNED_PREMIUM,
+        CAST(p.ANNUAL_PREMIUM_GBP -
+             p.ANNUAL_PREMIUM_GBP *
+             LEAST(12, GREATEST(0,(CURRENT_DATE - p.INCEPTION_DT) / 30)) / 12.0
+             AS DECIMAL(12,2))                                  AS UNEARNED_PREMIUM,
+        t.TREATY_ID,
+        t.CESSION_PCT,
+        CAST(p.ANNUAL_PREMIUM_GBP * COALESCE(t.CESSION_PCT,0) / 100.0
+             AS DECIMAL(12,2))                                  AS CEDED_PREMIUM,
+        CURRENT_DATE                                            AS AS_AT_DT
+    FROM POLICY_ADMIN_DB.POLICY p
+    LEFT JOIN REINSURANCE_DB.TREATY t
+           ON t.LINE_OF_BUSINESS = p.PRODUCT_CD
+          AND t.UW_YEAR = p.UW_YEAR
+          AND t.TREATY_TYPE = 'QUOTA_SHARE'
+    WHERE p.POLICY_STATUS IN ('IF','RN')      /* UW definition of active here! */
+) WITH DATA
+PRIMARY INDEX (POLICY_NO);
+
+.IF ERRORCODE <> 0 THEN .GOTO ERR;
+SELECT 'STG_EARNED_PREMIUM rows: ' || TRIM(COUNT(*)) FROM ETL_STAGING_DB.STG_EARNED_PREMIUM;
+.LOGOFF; .QUIT 0;
+.LABEL ERR; .LOGOFF; .QUIT 8;

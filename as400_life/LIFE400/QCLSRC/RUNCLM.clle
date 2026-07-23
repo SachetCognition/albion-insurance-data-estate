@@ -1,0 +1,65 @@
+/*===============================================================*/
+/* PROGRAM:   RUNCLM                                            */
+/* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             */
+/* AUTHOR:    D. BRENNAN                                        */
+/* DATE:      1997-11-10                                        */
+/* VERSION:   1.1                                               */
+/* MODIFIED:  1998-11-14 - Y2K: PROCESS DATE FROM SYSTEM       */
+/*---------------------------------------------------------------*/
+/* SUBMIT CLAIMS ADJUDICATION BATCH JOB                         */
+/* SUBMITS CLMADJB TO BATCH QUEUE (LIFEQ) FOR ASYNCHRONOUS      */
+/* ADJUDICATION OF A SINGLE DEATH CLAIM.                        */
+/*                                                               */
+/* PARAMETERS:                                                   */
+/*   &CLMID  - CLAIM ID TO ADJUDICATE (12 CHARS)               */
+/*   &POLID  - ASSOCIATED POLICY ID   (12 CHARS)               */
+/*                                                               */
+/* USAGE:                                                        */
+/*   CALL RUNCLM PARM('CLM000000001' 'POLTEST00001')            */
+/*   OR FROM CLMMNT INTERACTIVE PROGRAM FOR BATCH RE-SUBMISSION */
+/*===============================================================*/
+PGM PARM(&CLMID &POLID)
+
+DCL VAR(&CLMID)   TYPE(*CHAR) LEN(12)
+DCL VAR(&POLID)   TYPE(*CHAR) LEN(12)
+DCL VAR(&JOBNAM)  TYPE(*CHAR) LEN(10) VALUE('CLMBAT')
+DCL VAR(&MSGDTA)  TYPE(*CHAR) LEN(80)
+
+/* VALIDATE PARAMETERS */
+IF COND(&CLMID *EQ '            ') THEN(DO)
+    SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) +
+        MSGDTA('RUNCLM: CLAIM ID PARAMETER IS REQUIRED') +
+        MSGTYPE(*ESCAPE)
+    GOTO CMDLBL(ENDJOB)
+ENDDO
+
+IF COND(&POLID *EQ '            ') THEN(DO)
+    SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) +
+        MSGDTA('RUNCLM: POLICY ID PARAMETER IS REQUIRED') +
+        MSGTYPE(*ESCAPE)
+    GOTO CMDLBL(ENDJOB)
+ENDDO
+
+/* OVERRIDE DATABASE FILES */
+OVRDBF FILE(POLMST) TOFILE(LIFE400/POLMST) OVRSCOPE(*JOB)
+OVRDBF FILE(CLMPF)  TOFILE(LIFE400/CLMPF)  OVRSCOPE(*JOB)
+
+/* SUBMIT CLAIMS ADJUDICATION BATCH JOB */
+CHGVAR VAR(&MSGDTA) VALUE('CLAIM BATCH SUBMITTED: ' *CAT &CLMID)
+
+SBMJOB JOB(&JOBNAM) JOBD(LIFE400/LIFEJD) JOBQ(LIFE400/LIFEQ) +
+    OUTQ(LIFE400/LIFEOUTQ) +
+    CMD(CALL PGM(LIFE400/CLMADJB) PARM(&CLMID &POLID)) +
+    MSGQ(LIFE400/LIFEMSGQ)
+
+/* NOTIFY SUBMITTING USER */
+SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA(&MSGDTA) +
+    TOMSGQ(*REQUESTER) MSGTYPE(*INFO)
+
+/* CLEAN UP OVERRIDES */
+DLTOVR FILE(POLMST) LVL(*JOB)
+DLTOVR FILE(CLMPF)  LVL(*JOB)
+MONMSG MSGID(CPF9841)
+
+ENDJOB:
+ENDPGM

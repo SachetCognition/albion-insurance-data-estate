@@ -1,0 +1,67 @@
+     A*===============================================================*
+     A* FILE:      CLMPF                                             *
+     A* TYPE:      PHYSICAL FILE                                     *
+     A* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             *
+     A* AUTHOR:    D. BRENNAN                                        *
+     A* DATE:      1997-11-02                                        *
+     A* VERSION:   1.1                                               *
+     A* MODIFIED:  1998-11-14 - Y2K DATE FIELD REVIEW               *
+     A*---------------------------------------------------------------*
+     A* CLAIMS FILE - ONE RECORD PER CLAIM                           *
+     A* LIBRARY:   LIFE400                                           *
+     A* CRTPF FILE(LIFE400/CLMPF) SRCFILE(LIFE400/QDDSSRC)          *
+     A*===============================================================*
+     A          R CLMREC                       TEXT('CLAIM RECORD')
+     A*--- CLAIM IDENTIFICATION ---
+     A            CLMID         12A           TEXT('CLAIM ID')
+     A                                        COLHDG('CLAIM' 'ID')
+     A            POLID         12A           TEXT('POLICY ID')
+     A                                        COLHDG('POLICY' 'ID')
+     A*--- CLAIM DATA ---
+     A            CLMTYPE        2A           TEXT('CLAIM TYPE DT=DEATH')
+     A                                        COLHDG('CLM' 'TYPE')
+     A            CAUSDTH        3A           TEXT('CAUSE OF DEATH')
+     A                                        COLHDG('CAUSE' 'DTH')
+     A*Y2K: STORED AS YYYYMMDD
+     A            DTHDTC         8S 0         TEXT('DATE OF DEATH YYYYMMDD')
+     A                                        COLHDG('DATE OF' 'DEATH')
+     A*--- DOCUMENT FLAGS ---
+     A            DTHCERT        1A           TEXT('DEATH CERT RECD Y/N')
+     A                                        COLHDG('DTH' 'CERT')
+     A            CLMFORM        1A           TEXT('CLAIM FORM RECD Y/N')
+     A                                        COLHDG('CLM' 'FORM')
+     A            IDPROOF        1A           TEXT('ID PROOF RECD Y/N')
+     A                                        COLHDG('ID' 'PROOF')
+     A            MEDRECS        1A           TEXT('MEDICAL RECORDS RECD Y/N')
+     A                                        COLHDG('MED' 'RECS')
+     A*--- BENEFICIARY ---
+     A            BENNAME       40A           TEXT('BENEFICIARY NAME')
+     A                                        COLHDG('BENEFICIARY NAME')
+     A            BENREL        20A           TEXT('BENEFICIARY RELATION')
+     A                                        COLHDG('BENEFICIARY' 'RELATION')
+     A*--- CLAIM STATUS AND DECISION ---
+     A            CLMSTS         1A           TEXT('CLAIM STATUS')
+     A                                        COLHDG('CLM' 'STS')
+     A            CLMDEC         1A           TEXT('CLAIM DECISION A/R/P')
+     A                                        COLHDG('CLM' 'DEC')
+     A            INVSTS         1A           TEXT('INVESTIGATION STATUS N/P/C')
+     A                                        COLHDG('INV' 'STS')
+     A            CLMHOLD       50A           TEXT('HOLD REASON')
+     A                                        COLHDG('HOLD REASON')
+     A*--- PAYMENT ---
+     A            PYMTAMT       15S 2         TEXT('CLAIM PAYMENT AMOUNT')
+     A                                        COLHDG('PAYMENT' 'AMOUNT')
+     A            PYMTMODE       1A           TEXT('PAYMENT MODE C=CHK A=ACH')
+     A                                        COLHDG('PAY' 'MODE')
+     A*--- DATES ---
+     A*Y2K: ALL DATES YYYYMMDD
+     A            CLMDATE        8S 0         TEXT('CLAIM SUBMIT DATE YYYYMMDD')
+     A                                        COLHDG('SUBMIT' 'DATE')
+     A            INVDATE        8S 0         TEXT('INVEST DATE YYYYMMDD')
+     A                                        COLHDG('INVEST' 'DATE')
+     A            ADJDATE        8S 0         TEXT('ADJUDIC DATE YYYYMMDD')
+     A                                        COLHDG('ADJUDIC' 'DATE')
+     A            SETDATE        8S 0         TEXT('SETTLE DATE YYYYMMDD')
+     A                                        COLHDG('SETTLE' 'DATE')
+     A*--- KEY ---
+     A          K CLMID

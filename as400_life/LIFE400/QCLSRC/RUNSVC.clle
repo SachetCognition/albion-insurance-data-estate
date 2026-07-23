@@ -1,0 +1,65 @@
+/*===============================================================*/
+/* PROGRAM:   RUNSVC                                            */
+/* SYSTEM:    LIFE400 - PROVIDENT MUTUAL ASSURANCE             */
+/* AUTHOR:    R. KOWALSKI                                       */
+/* DATE:      1998-03-10                                        */
+/* VERSION:   1.0                                               */
+/* MODIFIED:  1998-11-14 - Y2K: PROCESS DATE FROM SYSTEM       */
+/*---------------------------------------------------------------*/
+/* SUBMIT SERVICING / AMENDMENT BATCH JOB                       */
+/* SUBMITS SVCBILB TO BATCH QUEUE (LIFEQ) FOR ASYNCHRONOUS      */
+/* PROCESSING OF A POLICY SERVICING REQUEST.                    */
+/*                                                               */
+/* PARAMETERS:                                                   */
+/*   &POLID  - POLICY ID TO SERVICE (12 CHARS)                  */
+/*   &SVCID  - SERVICE REQUEST ID   (12 CHARS)                  */
+/*                                                               */
+/* USAGE:                                                        */
+/*   CALL RUNSVC PARM('POLTEST00001' 'SVC000000001')            */
+/*   OR FROM SVCMNT INTERACTIVE PROGRAM FOR BATCH RE-SUBMISSION */
+/*===============================================================*/
+PGM PARM(&POLID &SVCID)
+
+DCL VAR(&POLID)   TYPE(*CHAR) LEN(12)
+DCL VAR(&SVCID)   TYPE(*CHAR) LEN(12)
+DCL VAR(&JOBNAM)  TYPE(*CHAR) LEN(10) VALUE('SVCBAT')
+DCL VAR(&MSGDTA)  TYPE(*CHAR) LEN(80)
+
+/* VALIDATE PARAMETERS */
+IF COND(&POLID *EQ '            ') THEN(DO)
+    SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) +
+        MSGDTA('RUNSVC: POLICY ID PARAMETER IS REQUIRED') +
+        MSGTYPE(*ESCAPE)
+    GOTO CMDLBL(ENDJOB)
+ENDDO
+
+IF COND(&SVCID *EQ '            ') THEN(DO)
+    SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) +
+        MSGDTA('RUNSVC: SERVICE ID PARAMETER IS REQUIRED') +
+        MSGTYPE(*ESCAPE)
+    GOTO CMDLBL(ENDJOB)
+ENDDO
+
+/* OVERRIDE DATABASE FILES */
+OVRDBF FILE(POLMST) TOFILE(LIFE400/POLMST) OVRSCOPE(*JOB)
+OVRDBF FILE(SVCPF)  TOFILE(LIFE400/SVCPF)  OVRSCOPE(*JOB)
+
+/* SUBMIT SERVICING BATCH JOB */
+CHGVAR VAR(&MSGDTA) VALUE('SVC BATCH SUBMITTED: ' *CAT &POLID)
+
+SBMJOB JOB(&JOBNAM) JOBD(LIFE400/LIFEJD) JOBQ(LIFE400/LIFEQ) +
+    OUTQ(LIFE400/LIFEOUTQ) +
+    CMD(CALL PGM(LIFE400/SVCBILB) PARM(&POLID &SVCID)) +
+    MSGQ(LIFE400/LIFEMSGQ)
+
+/* NOTIFY SUBMITTING USER */
+SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA(&MSGDTA) +
+    TOMSGQ(*REQUESTER) MSGTYPE(*INFO)
+
+/* CLEAN UP OVERRIDES */
+DLTOVR FILE(POLMST) LVL(*JOB)
+DLTOVR FILE(SVCPF)  LVL(*JOB)
+MONMSG MSGID(CPF9841)
+
+ENDJOB:
+ENDPGM
