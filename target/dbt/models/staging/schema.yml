@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: stg_policies
+    description: >
+      Deduplicated policy records from the POLARIS/LEGACY_PAS policy admin
+      extract. Translation of the POLICY source read in
+      teradata/bteq/04_stg_policy_360.bteq and 06_stg_earned_premium.bteq.
+    columns:
+      - name: policy_no
+        tests:
+          - not_null
+          - unique
+      - name: policy_status
+        tests:
+          - accepted_values:
+              values: ['IF', 'RN', 'LP', 'CN', 'EX']
+
+  - name: stg_parties
+    description: Party records with birth date normalised to DATE and postcode upper-cased.
+    columns:
+      - name: party_id
+        tests:
+          - not_null
+          - unique
+      - name: email_addr
+        description: DQR-007 canonical email validity check (warn — legacy data contains known-bad values).
+        tests:
+          - dqr_007_valid_email:
+              severity: warn
+      - name: postcode
+        description: DQR-014 canonical UK postcode validity check (warn — legacy data contains known-bad values).
+        tests:
+          - dqr_014_valid_uk_postcode:
+              severity: warn
+
+  - name: stg_brokers
+    columns:
+      - name: broker_id
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_premium_transactions
+    description: Premium transactions excluding CN_REFUND, as in the legacy BTEQ aggregate.
+    columns:
+      - name: premium_txn_id
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_claims
+    description: Claims with loss date normalised from DD/MM/YYYY text to DATE.
+    columns:
+      - name: claim_no
+        tests:
+          - not_null
+          - unique

@@ -1,0 +1,66 @@
+name: albion_target
+version: 1.0.0
+config-version: 2
+
+profile: albion_target
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+target-path: "dbt_target"
+clean-targets: ["dbt_target", "dbt_packages"]
+
+models:
+  albion_target:
+    staging:
+      +materialized: view
+      +schema: staging
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  albion_target:
+    +schema: raw
+    policies:
+      +column_types:
+        POLICY_NO: varchar(18)
+        PARTY_ID: varchar(8)
+        PRODUCT_CD: varchar(3)
+        BROKER_ID: varchar(7)
+        INCEPTION_DT: date
+        EXPIRY_DT: date
+        POLICY_STATUS: varchar(2)
+        ANNUAL_PREMIUM_GBP: decimal(12,2)
+        IPT_RATE: decimal(5,4)
+        UW_YEAR: smallint
+    parties:
+      +column_types:
+        PARTY_ID: varchar(8)
+        BIRTH_DT: varchar(10)
+        PHONE: varchar(20)
+        POSTCODE: varchar(10)
+        LEGACY_CUSTOMER_ID: integer
+        CREATE_DT: varchar(10)
+    brokers:
+      +column_types:
+        BROKER_ID: varchar(7)
+        COMMISSION_PCT: decimal(5,2)
+    premium_transactions:
+      +column_types:
+        PREMIUM_TXN_ID: integer
+        POLICY_NO: varchar(18)
+        TXN_DT: date
+        GROSS_AMT_GBP: decimal(12,2)
+    claims:
+      +column_types:
+        CLAIM_NO: varchar(11)
+        POLICY_NO: varchar(18)
+        CLAIMANT_PARTY_ID: varchar(8)
+        LOSS_DT: varchar(10)
+        NOTIFICATION_DT: varchar(10)
+        INCURRED_AMT: decimal(12,2)
+        PAID_AMT: decimal(12,2)
+        OUTSTANDING_RESERVE: decimal(12,2)

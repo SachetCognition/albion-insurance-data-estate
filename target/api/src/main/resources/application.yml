@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: policy-inquiry-api
+
+albion:
+  data:
+    # Bundled copies of the dbt mart exports (target/dbt/exports/). Override
+    # with file: locations to serve a fresh dbt build directly, e.g.
+    #   --albion.data.policy-360=file:../dbt/exports/policy_360.csv
+    policy-360: classpath:data/policy_360.csv
+    party-claims: classpath:data/party_claims.csv
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

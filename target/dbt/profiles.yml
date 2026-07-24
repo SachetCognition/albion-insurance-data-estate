@@ -1,0 +1,19 @@
+# Local development profile (DuckDB). A Snowflake target can be added under
+# the same profile name for warehouse deployment.
+albion_target:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: dbt_target/albion.duckdb
+      threads: 4
+    # snowflake:
+    #   type: snowflake
+    #   account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+    #   user: "{{ env_var('SNOWFLAKE_USER') }}"
+    #   password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+    #   role: TRANSFORMER
+    #   database: ALBION_TARGET
+    #   warehouse: TRANSFORMING
+    #   schema: MARTS
+    #   threads: 8

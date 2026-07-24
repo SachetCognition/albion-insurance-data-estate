@@ -1,0 +1,9 @@
+# dbt local artifacts
+dbt/dbt_target/
+dbt/dbt_packages/
+dbt/logs/
+dbt/exports/
+*.duckdb
+
+# Maven build output
+api/target/
