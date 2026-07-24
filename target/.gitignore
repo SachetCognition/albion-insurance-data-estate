@@ -7,3 +7,4 @@ dbt/exports/
 
 # Maven build output
 api/target/
+dbt/.user.yml
