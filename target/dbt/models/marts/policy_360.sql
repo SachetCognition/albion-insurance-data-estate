@@ -39,9 +39,11 @@ select
 
     p.annual_premium_gbp,
 
+    -- Elapsed months = floor(days/30), matching the legacy Finance rule in
+    -- 06_stg_earned_premium.bteq so figures reconcile with the source of truth.
     cast(
         p.annual_premium_gbp
-        * least(12, greatest(0, datediff('month', p.inception_dt, current_date)))
+        * least(12, greatest(0, datediff('day', p.inception_dt, current_date) // 30))
         / 12.0
         as decimal(12, 2)
     ) as earned_premium_gbp,
