@@ -1,0 +1,50 @@
+version: 2
+models:
+  - name: policy_360
+    columns:
+      - name: policy_id
+        tests: [not_null]
+      - name: source_system
+        tests:
+          - accepted_values:
+              name: policy_360_source_system_contract_domain
+              arguments:
+                values: ['PLCYMSTR', 'LIFE400', 'GUIDEWIRE']
+      - name: status
+        tests:
+          - accepted_values:
+              name: policy_360_status_contract_domain
+              arguments:
+                values: ['ACTIVE', 'LAPSED', 'CANCELLED', 'EXPIRED']
+      - name: earned_premium_gbp
+        tests: [not_null]
+  - name: claims_summary
+    columns:
+      - name: claim_id
+        tests: [unique, not_null]
+      - name: fraud_flag
+        tests:
+          - accepted_values:
+              name: claims_summary_fraud_contract_domain
+              arguments:
+                values: ['Y', 'N', 'SUSPECTED']
+      - name: status
+        tests:
+          - accepted_values:
+              name: claims_summary_status_contract_domain
+              arguments:
+                values: ['OPEN', 'CLOSED', 'REOPENED', 'DECLINED']
+  - name: dq_pass_rates
+    columns:
+      - name: rule_id
+        tests: [unique, not_null]
+      - name: pass_rate
+        tests: [not_null]
+      - name: rule_name
+        tests: [not_null]
+      - name: as_of_date
+        tests: [not_null]
+  - name: data_product_summary
+    columns:
+      - name: as_of_date
+        tests: [not_null]

@@ -1,0 +1,7 @@
+albion_duckdb:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: target/albion.duckdb
+      threads: 4

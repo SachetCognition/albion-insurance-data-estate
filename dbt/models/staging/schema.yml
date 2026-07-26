@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: stg_policies
+    columns:
+      - name: policy_id
+        tests: [not_null]
+      - name: status
+        tests:
+          - accepted_values:
+              name: stg_policies_status_contract_domain
+              arguments:
+                values: ['ACTIVE', 'LAPSED', 'CANCELLED', 'EXPIRED']
+      - name: postcode_dq_status
+        tests:
+          - accepted_values:
+              name: stg_policies_postcode_status_contract_domain
+              arguments:
+                values: ['VALID', 'INVALID', 'MISSING']
+  - name: stg_claims
+    columns:
+      - name: loss_date
+        tests: [not_null]
+      - name: status
+        tests:
+          - accepted_values:
+              name: stg_claims_status_contract_domain
+              arguments:
+                values: ['OPEN', 'CLOSED', 'REOPENED', 'DECLINED']
+      - name: fraud_flag
+        tests:
+          - accepted_values:
+              name: stg_claims_fraud_contract_domain
+              arguments:
+                values: ['Y', 'N', 'SUSPECTED']
