@@ -1,0 +1,7 @@
+{
+  "type": "https://albion.example/problems/policy-not-found",
+  "title": "Policy not found",
+  "status": 404,
+  "detail": "No policy exists with id 'ALB-XXX-9999999'",
+  "instance": "/api/v1/policies/ALB-XXX-9999999"
+}

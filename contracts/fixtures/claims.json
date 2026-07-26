@@ -1,0 +1,232 @@
+[
+  {
+    "claimId": "CLM00001187",
+    "policyId": "ALB-PET-0000001",
+    "lossDate": "2023-07-01",
+    "notifiedDate": "2023-08-15",
+    "status": "OPEN",
+    "incurredGbp": "78107.93",
+    "paidGbp": "5663.06",
+    "fraudFlag": "SUSPECTED"
+  },
+  {
+    "claimId": "CLM00001542",
+    "policyId": "ALB-PET-0000008",
+    "lossDate": "2019-10-13",
+    "notifiedDate": "2019-10-13",
+    "status": "DECLINED",
+    "incurredGbp": "50365.37",
+    "paidGbp": "9631.47",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000475",
+    "policyId": "ALB-PET-0000009",
+    "lossDate": "2024-08-20",
+    "notifiedDate": "2024-08-20",
+    "status": "CLOSED",
+    "incurredGbp": "33759.53",
+    "paidGbp": "14319.02",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00001487",
+    "policyId": "ALB-TRV-0000010",
+    "lossDate": "2026-07-05",
+    "notifiedDate": "2026-07-07",
+    "status": "OPEN",
+    "incurredGbp": "64291.28",
+    "paidGbp": "12785.04",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000988",
+    "policyId": "ALB-HOM-0000013",
+    "lossDate": "2020-09-04",
+    "notifiedDate": "2020-09-06",
+    "status": "CLOSED",
+    "incurredGbp": "10219.37",
+    "paidGbp": "5204.79",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000261",
+    "policyId": "ALB-CPM-0000014",
+    "lossDate": "2019-07-02",
+    "notifiedDate": "2019-07-02",
+    "status": "CLOSED",
+    "incurredGbp": "21385.36",
+    "paidGbp": "18720.49",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000667",
+    "policyId": "ALB-CLB-0000024",
+    "lossDate": "2019-12-22",
+    "notifiedDate": "2020-01-03",
+    "status": "CLOSED",
+    "incurredGbp": "35394.62",
+    "paidGbp": "27940.12",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00001543",
+    "policyId": "ALB-PET-0000025",
+    "lossDate": "2024-12-08",
+    "notifiedDate": "2024-12-09",
+    "status": "CLOSED",
+    "incurredGbp": "11449.54",
+    "paidGbp": "10754.96",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000213",
+    "policyId": "ALB-MOT-0000028",
+    "lossDate": "2021-02-20",
+    "notifiedDate": "2021-02-22",
+    "status": "CLOSED",
+    "incurredGbp": "78516.88",
+    "paidGbp": "69399.44",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00001539",
+    "policyId": "ALB-CPM-0000032",
+    "lossDate": "2025-10-19",
+    "notifiedDate": "2025-10-21",
+    "status": "OPEN",
+    "incurredGbp": "6782.64",
+    "paidGbp": "396.27",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000828",
+    "policyId": "ALB-PET-0000035",
+    "lossDate": "2021-07-26",
+    "notifiedDate": "2021-07-31",
+    "status": "CLOSED",
+    "incurredGbp": "48147.34",
+    "paidGbp": "26053.17",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000858",
+    "policyId": "ALB-CLB-0000041",
+    "lossDate": "2024-05-29",
+    "notifiedDate": "2024-05-31",
+    "status": "OPEN",
+    "incurredGbp": "50070.41",
+    "paidGbp": "4942.03",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000355",
+    "policyId": "ALB-HOM-0000042",
+    "lossDate": "2023-12-17",
+    "notifiedDate": "2024-04-15",
+    "status": "CLOSED",
+    "incurredGbp": "54925.56",
+    "paidGbp": "23792.60",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000962",
+    "policyId": "ALB-CPM-0000046",
+    "lossDate": "2023-11-10",
+    "notifiedDate": "2023-11-11",
+    "status": "CLOSED",
+    "incurredGbp": "55251.41",
+    "paidGbp": "38973.76",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000265",
+    "policyId": "ALB-PET-0000048",
+    "lossDate": "2024-08-17",
+    "notifiedDate": "2024-08-22",
+    "status": "CLOSED",
+    "incurredGbp": "45000.50",
+    "paidGbp": "15589.53",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000739",
+    "policyId": "ALB-PET-0000049",
+    "lossDate": "2026-08-08",
+    "notifiedDate": "2026-08-08",
+    "status": "CLOSED",
+    "incurredGbp": "9704.21",
+    "paidGbp": "8901.39",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000164",
+    "policyId": "ALB-CPM-0000053",
+    "lossDate": "2025-05-10",
+    "notifiedDate": "2025-06-24",
+    "status": "OPEN",
+    "incurredGbp": "22166.40",
+    "paidGbp": "783.12",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000684",
+    "policyId": "ALB-CPM-0000054",
+    "lossDate": "2021-01-27",
+    "notifiedDate": "2021-01-27",
+    "status": "REOPENED",
+    "incurredGbp": "46890.13",
+    "paidGbp": "36739.51",
+    "fraudFlag": "Y"
+  },
+  {
+    "claimId": "CLM00000982",
+    "policyId": "ALB-PET-0000056",
+    "lossDate": "2021-01-28",
+    "notifiedDate": "2021-01-28",
+    "status": "CLOSED",
+    "incurredGbp": "45283.08",
+    "paidGbp": "28996.15",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000674",
+    "policyId": "ALB-MOT-0000059",
+    "lossDate": "2020-06-08",
+    "notifiedDate": "2020-07-23",
+    "status": "CLOSED",
+    "incurredGbp": "21954.66",
+    "paidGbp": "20551.46",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000731",
+    "policyId": "ALB-PET-0000062",
+    "lossDate": "2025-01-13",
+    "notifiedDate": "2025-01-13",
+    "status": "OPEN",
+    "incurredGbp": "41746.03",
+    "paidGbp": "3072.92",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000163",
+    "policyId": "ALB-CPM-0000065",
+    "lossDate": "2022-10-13",
+    "notifiedDate": "2022-10-14",
+    "status": "CLOSED",
+    "incurredGbp": "1321.87",
+    "paidGbp": "761.20",
+    "fraudFlag": "N"
+  },
+  {
+    "claimId": "CLM00000631",
+    "policyId": "ALB-CPM-0000066",
+    "lossDate": "2026-09-02",
+    "notifiedDate": "2026-09-02",
+    "status": "OPEN",
+    "incurredGbp": "72474.23",
+    "paidGbp": "16821.15",
+    "fraudFlag": "N"
+  }
+]

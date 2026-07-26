@@ -1,0 +1,15 @@
+{
+  "policyId": "ALB-PET-0000001",
+  "legacyPolicyNo": "ALBPET0000001",
+  "partyId": "P0000936",
+  "productCode": "PET",
+  "inceptionDate": "2022-07-30",
+  "expiryDate": "2023-07-30",
+  "status": "ACTIVE",
+  "annualPremiumGbp": "3100.09",
+  "earnedPremiumGbp": "3100.09",
+  "postcode": "CF10 1EP",
+  "postcodeDqStatus": "VALID",
+  "brokerId": "BRK0046",
+  "sourceSystem": "PLCYMSTR"
+}

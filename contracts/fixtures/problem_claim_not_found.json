@@ -1,0 +1,7 @@
+{
+  "type": "https://albion.example/problems/claim-not-found",
+  "title": "Claim not found",
+  "status": 404,
+  "detail": "No claim exists with id 'CLM99999999'",
+  "instance": "/api/v1/claims/CLM99999999"
+}
