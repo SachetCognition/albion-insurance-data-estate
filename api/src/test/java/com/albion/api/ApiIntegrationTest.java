@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class ApiIntegrationTest {
+class ApiIntegrationTest extends MartBackedTest {
   @Autowired private MockMvc mvc;
 
   @Test
@@ -70,7 +70,8 @@ class ApiIntegrationTest {
   void getsPolicyClaims() throws Exception {
     mvc.perform(get("/api/v1/policies/ALB-PET-0000001/claims"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].claimId").value("CLM00001187"));
+        .andExpect(jsonPath("$[0].claimId").value("CLM00001187"))
+        .andExpect(jsonPath("$.length()").value(2));
   }
 
   @Test
@@ -85,8 +86,12 @@ class ApiIntegrationTest {
   void getsSummaryIncludingDqRates() throws Exception {
     mvc.perform(get("/api/v1/data-products/summary"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalEarnedPremiumGbp").value("121068.77"))
-        .andExpect(jsonPath("$.dqPassRates.DQR-014").value("0.8800"));
+        .andExpect(jsonPath("$.asOfDate").value("2026-01-15"))
+        .andExpect(jsonPath("$.activePolicyCount").value(3652))
+        .andExpect(jsonPath("$.totalEarnedPremiumGbp").value("18081648.57"))
+        .andExpect(jsonPath("$.openClaimsCount").value(405))
+        .andExpect(jsonPath("$.totalIncurredGbp").value("68392673.71"))
+        .andExpect(jsonPath("$.dqPassRates.DQR-014").value("0.9746"));
   }
 
   @Test

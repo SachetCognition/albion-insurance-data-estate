@@ -8,21 +8,40 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = "albion.fixtures.path=src/test/resources/legacy-fixtures")
-class LegacyRegressionTest {
+class LegacyRegressionTest extends MartBackedTest {
   @Autowired private MockMvc mvc;
 
+  /** INC0067812: the UK DD/MM/YYYY loss date 09/05/2021 must surface as 9 May, not 5 September. */
   @Test
-  void mapsUkDateAndSuspectedFlagInHttpResponse() throws Exception {
-    mvc.perform(get("/api/v1/claims/LEGACY-1"))
+  void serialisesAmbiguousLossDateWithUkDayFirstReading() throws Exception {
+    mvc.perform(get("/api/v1/claims/CLM00001188"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.lossDate").value("2023-07-01"))
-        .andExpect(jsonPath("$.fraudFlag").value("SUSPECTED"))
-        .andExpect(jsonPath("$.incurredGbp").value("1.00"));
+        .andExpect(jsonPath("$.lossDate").value("2021-05-09"))
+        .andExpect(jsonPath("$.notifiedDate").value("2021-05-11"));
+  }
+
+  /** Legacy fraud indicator 'S' resolves to exactly one contract value across every consumer. */
+  @Test
+  void serialisesLegacySuspectedFraudFlagConsistently() throws Exception {
+    mvc.perform(get("/api/v1/claims/CLM00001187"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.fraudFlag").value("SUSPECTED"));
+    mvc.perform(get("/api/v1/policies/ALB-PET-0000001/claims"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].fraudFlag").value("SUSPECTED"))
+        .andExpect(jsonPath("$[1].fraudFlag").value("N"));
+  }
+
+  /** Money must never serialise as a JSON number. */
+  @Test
+  void serialisesMoneyAsDecimalStrings() throws Exception {
+    mvc.perform(get("/api/v1/claims/CLM00001187"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.incurredGbp").value("78107.93"))
+        .andExpect(jsonPath("$.paidGbp").value("5663.06"));
   }
 }

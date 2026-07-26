@@ -5,9 +5,11 @@
     <groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>3.4.5</version>
   </parent>
   <groupId>com.albion</groupId><artifactId>albion-consumer-api</artifactId><version>1.0.0</version>
-  <properties><java.version>17</java.version></properties>
+  <properties><java.version>17</java.version><duckdb.version>1.5.4.0</duckdb.version></properties>
   <dependencies>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-jdbc</artifactId></dependency>
+    <dependency><groupId>org.duckdb</groupId><artifactId>duckdb_jdbc</artifactId><version>${duckdb.version}</version></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
   </dependencies>
   <build><plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin></plugins></build>
