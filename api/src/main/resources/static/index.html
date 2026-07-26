@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Albion Policy 360</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <span class="eyebrow">ALBION GENERAL INSURANCE</span>
+          <h1>Policy 360</h1>
+          <p>Live view of policies, claims and data quality.</p>
+        </div>
+        <div class="lookup">
+          <input id="policyId" placeholder="Policy ID e.g. ALB-PET-0000001">
+          <button id="lookupBtn" type="button">Look up</button>
+        </div>
+      </header>
+      <section id="tiles" class="tiles" aria-label="Summary metrics"></section>
+      <section class="card">
+        <div class="section-head">
+          <h2>Data quality pass rates</h2>
+          <span id="asOf"></span>
+        </div>
+        <div id="dq" class="dq"></div>
+      </section>
+      <section class="card">
+        <div class="section-head">
+          <h2>Policy 360</h2>
+          <div class="pagination">
+            <button id="prev" type="button">←</button>
+            <span id="pageLabel"></span>
+            <button id="next" type="button">→</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Policy</th><th>Product</th><th>Status</th><th>Premium</th><th>Postcode DQ</th><th>Source</th></tr></thead>
+            <tbody id="policies"></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="card">
+        <div class="section-head">
+          <h2>Claims summary</h2>
+          <span id="claimsMeta"></span>
+        </div>
+        <div id="claimsTiles" class="claims-tiles"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Claim</th><th>Policy</th><th>Loss date</th><th>Status</th><th>Incurred</th><th>Fraud flag</th></tr></thead>
+            <tbody id="claims"></tbody>
+          </table>
+        </div>
+      </section>
+      <section id="detail" class="card hidden"></section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
