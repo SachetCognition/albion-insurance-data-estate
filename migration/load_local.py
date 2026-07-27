@@ -28,11 +28,12 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 
 
 def dashed_policy(raw: str) -> str:
-    value = raw.strip().replace("-", "")
+    value = raw.strip()
+    if value.startswith("AL/"):
+        value = "ALB" + value[3:]
+    value = value.replace("-", "")
     if value.startswith("ALB") and len(value) >= 7:
         return f"{value[:3]}-{value[3:6]}-{value[6:]}"
-    if value.startswith("AL/"):
-        return value.replace("/", "-", 1)
     return value
 
 
