@@ -38,8 +38,10 @@ public class FixturePolicyRepository extends FixtureRepositorySupport implements
             .filter(policy -> partyId == null || partyId.equals(policy.partyId()))
             .filter(policy -> status == null || status == policy.status())
             .collect(Collectors.toList());
-    int from = Math.min(page * size, filtered.size());
-    int to = Math.min(from + size, filtered.size());
+    long offset = (long) page * size;
+    int from = offset >= filtered.size() ? filtered.size() : (int) offset;
+    long end = Math.min(offset + size, (long) filtered.size());
+    int to = (int) end;
     int pages = (int) Math.ceil(filtered.size() / (double) size);
     return new PageResponse<>(filtered.subList(from, to), page, size, filtered.size(), pages);
   }

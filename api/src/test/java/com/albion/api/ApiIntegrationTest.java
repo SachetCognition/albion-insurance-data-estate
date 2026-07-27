@@ -44,6 +44,17 @@ class ApiIntegrationTest {
   }
 
   @Test
+  void returnsEmptyPageForHugePageNumber() throws Exception {
+    mvc.perform(get("/api/v1/policies?page=21474837&size=100"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content").isEmpty())
+        .andExpect(jsonPath("$.page").value(21474837))
+        .andExpect(jsonPath("$.size").value(100))
+        .andExpect(jsonPath("$.totalElements").value(25))
+        .andExpect(jsonPath("$.totalPages").value(1));
+  }
+
+  @Test
   void filtersPoliciesByPartyId() throws Exception {
     mvc.perform(get("/api/v1/policies?partyId=P0000936"))
         .andExpect(status().isOk())
