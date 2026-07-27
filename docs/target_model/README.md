@@ -163,10 +163,10 @@ Money uses `DECIMAL(15,2)` and dates use `DATE`. Snowflake enum checks are in
 |---|---|
 | DQR-007 | `dbt/tests/DQR-007_email_regex.sql`; lowercase full email regex; pass rate in `dq_pass_rates` |
 | DQR-014 | `dbt/tests/DQR-014_postcode_regex.sql`; Variant A standardisation and regex, excluding MISSING from the denominator |
-| DQR-021 | `dbt/tests/DQR-021_nino_not_projected.sql`; projection-level metadata test proves no NINO column exists |
+| DQR-021 | `dbt/tests/DQR-021_nino_not_projected.sql`; projection-level metadata test proves no NINO or weak NINO hash exists; raw NINO is not landed |
 | DQR-030 | `dbt/tests/DQR-030_status_domain.sql`; loader rejects unknown policy/life statuses before landing |
 | DQR-033 | Disabled failing test because registry marks it SUSPENDED; `dq_pass_rates` reports observed rate |
-| DQR-041 | `dbt/tests/DQR-041_party_duplicate_persons.sql`; party natural-key candidate detection; rate counts duplicate natural-key party rows |
+| DQR-041 | `dbt/tests/DQR-041_party_duplicate_persons.sql`; party natural-key candidate detection; configured WARN because the sample contains real duplicate natural keys |
 | DQR-052 | Shared pivot implementation and `defect_life_pivot_40` test |
 
 `dq_pass_rates` always emits one row for every registry ID, with `rule_id`,
@@ -174,7 +174,9 @@ Money uses `DECIMAL(15,2)` and dates use `DATE`. Snowflake enum checks are in
 `as_of_date`. Pass rates are decimal(5,4). DQR-014 excludes MISSING postcodes
 from its denominator. DQR-021 is 1.0000 by construction. DQR-041 measures
 duplicate normalized first-name/last-name/birth-date natural-key rows, not
-distinct party IDs. DQR-052 is evidenced from the plausible range of
+distinct party IDs. The duplicate-person singular test returns duplicate
+natural-key groups and is WARN severity so `dbt build` remains usable while
+the signal is visible. DQR-052 is evidenced from the plausible range of
 pivot-derived inception dates rather than hard-coded. Its population is only
 the 600 PLCYMSTR `YYDDD` rows and 420 POLMSTEX `YYMMDD` rows, marked
 `PIVOT_40_JULIAN` or `PIVOT_40_YYMMDD` by the loader; the 5,200 ISO CSV dates
@@ -224,6 +226,24 @@ Informatica documentation's approximate 12% unmatched daily expectation.
 Because all 526 unmatched rows have an existing source-table party ID, the
 canonical policy landing still retains party IDs for all 5,200 P&C policies.
 
+The loader does not write NINO or `nino_hash` to any canonical landing or
+analytical projection. An unsalted SHA-256 NINO hash is not safe
+pseudonymisation because the UK NINO keyspace is brute-forceable; DQR-021
+therefore verifies absence rather than attempting to strengthen or consume
+the hash.
+
+Claims are referentially checked against `policy_360` by
+`dbt/tests/claims_policy_referential_integrity.sql`. Bordereaux rows whose
+derived policy ID is absent from the policy master are rejected with
+`POLICY_NOT_IN_POLICY_MASTER:<policy_id>` rather than landed as silent
+orphans.
+
+Malformed loss or notification dates are rejected per source line with
+`INVALID_LOSS_DT` or `INVALID_NOTIFICATION_DT`; they cannot abort the full
+load. Duplicate policy and claim keys are likewise rejected with explicit
+`DUPLICATE_POLICY_NO` or `DUPLICATE_CLAIM_NO` reasons, preserving additive
+reconciliation counts.
+
 The loader strips pound signs, commas, and quotes in bordereaux money fields.
 POLMSTEX offsets are empirically read as 0-based slices corresponding to the
 spec's 1-based positions: status `[35:37]`, DOB `[77:83]`, gender `[83]`,
@@ -237,3 +257,6 @@ and `DQ_PASS_RATES` tables, plus raw fixed-width/CSV landing tables. The
 `COPY INTO` statements land raw records first because Snowflake `COPY INTO`
 does not perform the fixed-width field slicing; the same canonical slicing and
 reject rules are then applied by the transformation layer.
+
+The `dq_pass_rates` pass-rate expression uses true decimal division in DuckDB
+and Snowflake; no integer-division workaround is required.

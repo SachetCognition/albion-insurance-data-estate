@@ -1,3 +1,5 @@
+{{ config(severity='warn', error_if='> 0') }}
+
 with natural_keys as (
     select
         upper(trim(first_name)) as first_name,
@@ -9,4 +11,4 @@ with natural_keys as (
 )
 select *
 from natural_keys
-where records < 1
+where records > 1

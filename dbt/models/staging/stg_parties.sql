@@ -4,7 +4,6 @@ select
     first_name,
     last_name,
     try_strptime(birth_dt, ['%d/%m/%Y', '%Y-%m-%d'])::date as birth_dt,
-    nino_hash,
     email_addr,
     phone,
     addr_line1,
