@@ -1,0 +1,17 @@
+scheduler,job,time,description,command,dependencies,evidence
+Control-M,ALB-MDM-0003,0130,wf_PARTY_MDM_SYNC,pmcmd startworkflow -f MDM_PARTY wf_PARTY_MDM_SYNC,,orchestration/controlm/ALBION_DWH_DAILY.xml:5
+Control-M,ALB-DWH-0031,0300,NDM watch PLCYMSTR,/opt/albion/etl/watch_ndm.sh plcymstr,,orchestration/controlm/ALBION_DWH_DAILY.xml:6
+Control-M,ALB-DWH-0032,0315,run_wf_policy_master (also kicks insurance BTEQ - undocumented),/opt/albion/etl/informatica/scripts/run_wf_policy_master,ALB-DWH-0031-OK,orchestration/controlm/ALBION_DWH_DAILY.xml:7
+Control-M,ALB-DWH-0040,0200,Premium Finance BTEQ+SAS (run_full_pipeline.sh),/opt/albion/etl/orchestration/run_full_pipeline.sh,,orchestration/controlm/ALBION_DWH_DAILY.xml:12
+Control-M,ALB-DWH-0047,0700 2100 cyclic 30M,wf_CLAIMS_FNOL_INTRADAY cyclic 30m,pmcmd startworkflow -f INS_CLAIMS wf_CLAIMS_FNOL_INTRADAY,,orchestration/controlm/ALBION_DWH_DAILY.xml:13
+Control-M,ALB-DWH-0050,0630,Insurance SAS pipeline,/opt/albion/etl/sas/run_insurance_sas_pipeline.sh,ALB-DWH-0032-OK,orchestration/controlm/ALBION_DWH_DAILY.xml:14
+Control-M,ALB-LIF-0005,0045,dsjob -run LIFE_POLICY_LOAD (DataStage 9.1; job source lost - do not modify),/opt/IBM/InformationServer/Server/DSEngine/bin/dsjob -run -jobstatus DS39 LIFE_POLICY_LOAD,,orchestration/controlm/ALBION_DWH_DAILY.xml:17
+Control-M,ALB-FIN-0012,2200 WD1,wf_BILLING_PREMIUM_RECON (monthly WD1),pmcmd startworkflow -f FIN_BILLING wf_BILLING_PREMIUM_RECON,,orchestration/controlm/ALBION_DWH_DAILY.xml:21
+cron (albetl01),run_wf_policy_master,15 3 * * *,ALSO in Control-M ALB-DWH-0032,/opt/albion/etl/informatica/scripts/run_wf_policy_master,,orchestration/cron/crontab_prod.txt:3
+cron (albetl01),bdx_transfer,0 6 1-5 * *,,/opt/albion/etl/informatica/scripts/bdx_transfer,,orchestration/cron/crontab_prod.txt:4
+cron (albetl01),run_insurance_sas_pipeline.sh,30 6 * * *,ALSO Control-M ALB-DWH-0050,/opt/albion/etl/sas/run_insurance_sas_pipeline.sh,,orchestration/cron/crontab_prod.txt:5
+cron (albetl01),archive_files,0 2 * * 0,,/opt/albion/etl/informatica/legacy_shared_services/scripts/archive_files,,orchestration/cron/crontab_prod.txt:6
+cron (albetl01),dsjob,45 0 * * *,ALSO Control-M ALB-LIF-0005 AND the DS Director scheduler - triple-scheduled,/opt/IBM/InformationServer/Server/DSEngine/bin/dsjob -run DS39 LIFE_POLICY_LOAD,,orchestration/cron/crontab_prod.txt:7
+cron (albetl01),dsjob,5 7 * * 1,,/opt/IBM/InformationServer/Server/DSEngine/bin/dsjob -run DS39 Bouns_Program_Job,,orchestration/cron/crontab_prod.txt:8
+AS/400 ADDJOBSCDE,DLYUPD,,"AS/400 job scheduler entry — weekly, described as nightly",,,as400_life/LIFE400/QCLSRC/DLYUPD.clle:12
+DataStage Director,LIFE_POLICY_LOAD,,DataStage Director scheduler (third schedule for the same job),,,orchestration/cron/crontab_prod.txt:7
