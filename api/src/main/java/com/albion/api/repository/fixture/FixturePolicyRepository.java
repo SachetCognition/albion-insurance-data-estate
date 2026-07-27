@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 @ConditionalOnProperty(
     name = "albion.datasource", havingValue = "fixtures", matchIfMissing = true)
 public class FixturePolicyRepository extends FixtureRepositorySupport implements PolicyRepository {
+  private static final int MAX_PAGE_SIZE = 100;
   private final List<PolicyDto> policies;
 
   public FixturePolicyRepository(
@@ -30,6 +31,8 @@ public class FixturePolicyRepository extends FixtureRepositorySupport implements
 
   public PageResponse<PolicyDto> findAll(
       String partyId, PolicyStatus status, int page, int size) {
+    page = Math.max(0, page);
+    size = Math.min(Math.max(1, size), MAX_PAGE_SIZE);
     List<PolicyDto> filtered =
         policies.stream()
             .filter(policy -> partyId == null || partyId.equals(policy.partyId()))

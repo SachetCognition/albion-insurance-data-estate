@@ -67,6 +67,42 @@ class ApiIntegrationTest {
   }
 
   @Test
+  void rejectsNegativePageWithProblemJson() throws Exception {
+    mvc.perform(get("/api/v1/policies?page=-1"))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+        .andExpect(jsonPath("$.type").value("https://albion.example/problems/invalid-request"))
+        .andExpect(jsonPath("$.title").value("Invalid request"))
+        .andExpect(jsonPath("$.status").value(400))
+        .andExpect(jsonPath("$.detail").value("Parameter 'page' must be greater than or equal to 0"))
+        .andExpect(jsonPath("$.instance").value("/api/v1/policies"));
+  }
+
+  @Test
+  void rejectsZeroSizeWithProblemJson() throws Exception {
+    mvc.perform(get("/api/v1/policies?size=0"))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+        .andExpect(jsonPath("$.type").value("https://albion.example/problems/invalid-request"))
+        .andExpect(jsonPath("$.title").value("Invalid request"))
+        .andExpect(jsonPath("$.status").value(400))
+        .andExpect(jsonPath("$.detail").value("Parameter 'size' must be greater than or equal to 1"))
+        .andExpect(jsonPath("$.instance").value("/api/v1/policies"));
+  }
+
+  @Test
+  void rejectsOverLimitSizeWithProblemJson() throws Exception {
+    mvc.perform(get("/api/v1/policies?size=101"))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+        .andExpect(jsonPath("$.type").value("https://albion.example/problems/invalid-request"))
+        .andExpect(jsonPath("$.title").value("Invalid request"))
+        .andExpect(jsonPath("$.status").value(400))
+        .andExpect(jsonPath("$.detail").value("Parameter 'size' must be less than or equal to 100"))
+        .andExpect(jsonPath("$.instance").value("/api/v1/policies"));
+  }
+
+  @Test
   void getsPolicyClaims() throws Exception {
     mvc.perform(get("/api/v1/policies/ALB-PET-0000001/claims"))
         .andExpect(status().isOk())

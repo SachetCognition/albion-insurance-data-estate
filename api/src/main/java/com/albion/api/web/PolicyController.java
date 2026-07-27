@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/policies")
 public class PolicyController {
+  private static final int MAX_PAGE_SIZE = 100;
+
   private final PolicyService policies;
   private final ClaimService claims;
 
@@ -34,6 +36,16 @@ public class PolicyController {
       @RequestParam(required = false) PolicyStatus status,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size) {
+    if (page < 0) {
+      throw new InvalidPaginationException("Parameter 'page' must be greater than or equal to 0");
+    }
+    if (size < 1) {
+      throw new InvalidPaginationException("Parameter 'size' must be greater than or equal to 1");
+    }
+    if (size > MAX_PAGE_SIZE) {
+      throw new InvalidPaginationException(
+          "Parameter 'size' must be less than or equal to " + MAX_PAGE_SIZE);
+    }
     return policies.find(partyId, status, page, size);
   }
 

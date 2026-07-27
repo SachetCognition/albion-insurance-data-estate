@@ -45,6 +45,17 @@ public class ApiExceptionHandler {
         request);
   }
 
+  @ExceptionHandler(InvalidPaginationException.class)
+  public ResponseEntity<Map<String, Object>> invalidPagination(
+      InvalidPaginationException exception, HttpServletRequest request) {
+    return problem(
+        "https://albion.example/problems/invalid-request",
+        "Invalid request",
+        400,
+        exception.getMessage(),
+        request);
+  }
+
   private ResponseEntity<Map<String, Object>> problem(
       String type, String title, int status, String detail, HttpServletRequest request) {
     return ResponseEntity.status(status)
