@@ -1,0 +1,11 @@
+.env
+*.duckdb
+*.duckdb.wal
+*.p8
+*.pem
+*.pub
+rsa_key*
+target/
+dbt_packages/
+logs/
+.user.yml
