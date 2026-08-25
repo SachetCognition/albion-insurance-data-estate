@@ -1,0 +1,152 @@
+version: 2
+
+models:
+  - name: stg_customer_360
+    description: >
+      Port of teradata/bteq/01_stg_customer_360.bteq — denormalised customer-360
+      staging row per non-closed banking customer, with primary HOME address and
+      aggregated account-portfolio metrics. As-at date is the
+      `bteq_customer_as_at_dt` var (default 2026-04-10, the baseline generation
+      date) in place of Teradata CURRENT_DATE.
+    data_tests:
+      - golden_parity:
+          arguments:
+            golden_seed: golden_stg_customer_360
+            key_columns: ['customer_id']
+            # load_ts is the model run timestamp (BTEQ CURRENT_TIMESTAMP(6))
+            exclude_columns: ['load_ts']
+            # float aggregations: 2 dp is the reporting precision of the source
+            # amounts, so summation order noise is tolerated below that
+            round_columns:
+              total_balance: 2
+              total_credit_limit: 2
+              credit_utilization_pct: 2
+    columns:
+      - name: customer_id
+        description: APF banking customer id (primary key, BTEQ PRIMARY INDEX).
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_status
+        description: A = active, I = inactive; closed customers are excluded.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['A', 'I']
+      - name: age
+        description: >
+          Calendar-year difference between the as-at date and date of birth,
+          which is what the legacy target table holds (the BTEQ 365.25
+          expression only approximates it).
+      - name: tenure_months
+        description: Whole months between customer_since and the as-at date.
+      - name: credit_utilization_pct
+        description: Credit balance / credit limit * 100, 0 when no credit limit.
+
+  - name: stg_policy_360
+    description: >
+      Port of teradata/bteq/04_stg_policy_360.bteq — denormalised policy-360
+      (policy + party + broker + premium aggregate). Consumes the canonical
+      DQR-014 postcode macros, the DQR-052 julian macro and the canonical
+      earned_premium macro; see the model header for the intentional diffs vs
+      the legacy baseline.
+    data_tests:
+      - golden_parity:
+          arguments:
+            golden_seed: golden_stg_policy_360
+            key_columns: ['policy_no']
+            # load_ts is the model run timestamp (BTEQ CURRENT_TIMESTAMP(0))
+            exclude_columns: ['load_ts']
+            # float sum of collected premium: compare at pence precision
+            round_columns:
+              total_collected_gbp: 2
+            # 10 keys are allow-listed for a 1p earned-premium break where the
+            # canonical cast lands exactly on a half-pence boundary (DuckDB
+            # truncates, Snowflake rounds half-up).
+    columns:
+      - name: policy_no
+        description: Policy number (primary key, BTEQ PRIMARY INDEX).
+        data_tests:
+          - not_null
+          - unique
+      - name: policy_status
+        description: >
+          DQR-030 — the only permitted policy statuses across the estate.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['IF', 'RN', 'LP', 'CN', 'EX']
+      - name: active_policy_flag
+        description: >
+          FINANCE definition of active: in force AND premium collected within
+          the last 45 days. Deliberately not the UW definition used by
+          stg_earned_premium.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Y', 'N']
+      - name: earned_premium_mth
+        description: >
+          Canonical straight-line 1/12ths earned premium (earned_premium macro,
+          default method).
+      - name: postcode_dq_status
+        description: >
+          DQR-014 canonical rule via is_valid_uk_postcode (auto-repairs a
+          missing space before the full UK regex). Diffs vs the legacy
+          space-required variant are allow-listed.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['VALID', 'INVALID']
+      - name: email_dq_status
+        description: DQR-007 legacy rule ('@' present); no canonical macro yet.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['VALID', 'INVALID']
+      - name: postcode_standardised
+        description: >
+          Additive: repaired postcode from standardise_postcode (not present in
+          the legacy target table).
+      - name: inception_dt_dqr052
+        description: >
+          Additive: inception date re-derived from its julian YYDDD form through
+          julian_to_date (single group pivot 50).
+      - name: party_canonical_key
+        description: >
+          Additive: scheme-prefixed identity key from party_canonical_key
+          (PARTY > LEGACY > NINO precedence for this feed).
+
+  - name: stg_earned_premium
+    description: >
+      Port of teradata/bteq/06_stg_earned_premium.bteq — monthly earned /
+      unearned premium per in-force or renewed policy plus the quota-share
+      reinsurance cession from the raw_reinsurance_treaties seed. Uses the
+      canonical earned_premium / unearned_premium macros (Finance 1/12ths).
+    data_tests:
+      - golden_parity:
+          arguments:
+            golden_seed: golden_stg_earned_premium
+            key_columns: ['policy_no']
+            # annual_premium * ipt_rate is an unrounded float product in both
+            # the legacy table and the model; compare at pence precision
+            round_columns:
+              ipt_amt: 2
+    columns:
+      - name: policy_no
+        description: Policy number (primary key, BTEQ PRIMARY INDEX).
+        data_tests:
+          - not_null
+          - unique
+      - name: uw_year
+        description: Underwriting year, joined to the treaty year.
+      - name: earned_premium
+        description: Canonical straight-line 1/12ths earned premium.
+      - name: unearned_premium
+        description: GWP minus earned premium, same method.
+      - name: treaty_id
+        description: >
+          Quota-share treaty for the policy's line of business and UW year;
+          null when no treaty exists.
+      - name: ceded_premium
+        description: GWP * cession_pct / 100, 0 when no treaty applies.
