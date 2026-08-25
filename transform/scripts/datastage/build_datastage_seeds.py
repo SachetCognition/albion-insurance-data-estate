@@ -180,8 +180,10 @@ def refresh_parity_allowlist() -> int:
         fields = reader.fieldnames or ["golden_seed", "key_value", "diff_reason"]
         kept = [r for r in reader if r["golden_seed"] not in DS_GOLDEN_SEEDS]
     mine = datastage_allowlist_rows()
+    # The shared allow-list is LF-terminated and is appended to by other
+    # workstreams; keep its line endings untouched to avoid whole-file churn.
     with open(ALLOWLIST, "w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=fields)
+        writer = csv.DictWriter(fh, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(kept + mine)
     return len(mine)
