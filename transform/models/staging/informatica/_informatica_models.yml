@@ -1,0 +1,280 @@
+version: 2
+
+models:
+  - name: stg_informatica_policy_master
+    description: >
+      Port of Informatica PowerCenter workflow wf_POLICY_MASTER_DAILY / mapping
+      m_POLICY_MASTER_DAILY (target STG_POLICY_MASTER). Reproduces the source
+      qualifier over the LEGACY_PAS nightly policy-master extract, the julian
+      date expression (EXP_POLICY_DATES), postcode standardisation and DQ
+      status (EXP_POSTCODE_DQ), the underwriting active-policy flag
+      (EXP_POLICY_FLAGS) and the CLIENT_NO -> PARTY_ID crosswalk lookup
+      (LKP_XREF_CLIENT_PARTY, "Use First Value" on multiple match; unmatched
+      rows keep a null PARTY_ID and are flagged).
+
+      VALIDATION APPROACH: no GOLDEN.BASELINE fixture exists for the
+      Informatica Teradata staging targets (transform/seeds/golden/ only holds
+      the BTEQ stg_* and SAS data-product baselines), so the golden_parity test
+      is not applicable here. Validation is therefore by DQ tests (uniqueness,
+      not-null, accepted values, referential integrity back to the raw seeds)
+      plus singular tests asserting the ported expression semantics.
+
+      INTENTIONAL CONVERGED-RULE DIFFS vs the legacy mapping:
+        * DQR-052 julian pivot — legacy EXP_POLICY_DATES windowed on 49
+          (00-49 -> 20xx); the canonical julian_to_date macro pivots on 50, so
+          a YYDDD value of 50ddd now resolves to 2050 rather than 1950. No row
+          in the current sample is affected (no 1950/2050 inception dates).
+        * DQR-014 postcode — legacy variant A only repaired a *missing* space
+          and did not collapse internal whitespace; the converged
+          standardise_postcode macro strips all internal spaces before
+          re-inserting the single space, so double-spaced mainframe postcodes
+          such as 'M1  1AE' now standardise to 'M1 1AE' and flip from INVALID
+          to VALID (38 party rows in the sample).
+      Both are recorded in seeds/parity_allowlist.csv.
+    columns:
+      - name: policy_no
+        description: LEGACY_PAS policy number (hyphen-stripped POLARIS format upstream).
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('raw_policies')
+                field: policy_no
+      - name: party_id
+        description: POLARIS party id resolved by LKP_XREF_CLIENT_PARTY; null when unmatched.
+      - name: party_canonical_key
+        description: >
+          Scheme-prefixed canonical key from the shared party_canonical_key
+          macro (PARTY: when the crosswalk resolves, otherwise LEGACY: on the
+          client number). Null for the 673 sample policies whose LEGACY_PAS
+          client has no client number at all — the legacy mapping likewise
+          emitted an unkeyed row rather than rejecting it.
+      - name: client_no
+        description: LEGACY_PAS client number (the party's LEGACY_CUSTOMER_ID).
+      - name: inception_dt_julian
+        description: YYDDD julian string as carried on the fixed-width extract.
+        data_tests:
+          - not_null
+      - name: inception_dt
+        description: Inception date from julian_to_date (DQR-052, converged pivot 50).
+        data_tests:
+          - not_null
+      - name: annual_premium_gbp
+        data_tests:
+          - not_null
+      - name: policy_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['IF', 'RN', 'EX', 'LP', 'CN']
+      - name: postcode_std
+        description: Postcode standardised by the converged DQR-014 macro.
+      - name: postcode_dq_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['VALID', 'INVALID']
+      - name: active_policy_flag
+        description: Underwriting definition (status IF or RN), per EXP_POLICY_FLAGS.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Y', 'N']
+      - name: xref_unmatched_flag
+        description: Y when LKP_XREF_CLIENT_PARTY returned no PARTY_ID.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Y', 'N']
+
+  - name: stg_informatica_party_mdm
+    description: >
+      Port of Informatica workflow wf_PARTY_MDM_SYNC / mapping m_PARTY_MDM_SYNC
+      (party golden-record sync). Reproduces EXP_EMAIL_DQ (DQR-007 variant B),
+      EXP_NINO_MASK (DQR-021), EXP_XMATCH_APF (name/DOB cross-match into the APF
+      banking customer book) and the survivorship rules: most-recent-update wins
+      for the cluster survivor, EXCEPT email where the longest standardised
+      string wins (the undocumented 2020 decision, retained and labelled).
+
+      IDENTITY: the canonical key comes from the shared party_canonical_key
+      macro, so the six identity schemes stay sample-scoped and attributable —
+      PARTY (PARTY_ID), LEGACY (LEGACY_CUSTOMER_ID), APF (banking customer_id
+      resolved here), NINO (fallback) are populated from the sample, while
+      LIFE400 (CLIENT_NO) and MKTG (MKTG_CUST_ID) have no column in the sample
+      source tables and are passed as nulls.
+
+      MATCH RATE vs the legacy 55%: measured in
+      stg_informatica_party_match_rate. On the 3,200-party sample the legacy
+      LEGACY_CUSTOMER_ID crosswalk matches 1,760 parties = 55.00%, exactly the
+      rate the legacy mapping description reports as "stuck at ~55%". The
+      converged rules (normalised-email exact match, then surname-block + exact
+      DOB) add ZERO new matches, so the converged rate is also 55.00% and the
+      delta is 0.00pp. What they do add is corroboration: 500 of the legacy
+      links are independently reproduced by both converged rules with zero
+      conflicting customer ids, and the remaining 1,440 unmatched parties (the
+      MDM_SUSPECT_QUEUE analogue) have no email or name+DOB counterpart in the
+      APF book at all — i.e. the 45% gap is missing source coverage, not weak
+      matching logic.
+
+      VALIDATION APPROACH: no GOLDEN.BASELINE fixture exists for the MDM hub
+      target, so validation is by DQ tests plus singular tests (match-rate
+      non-regression, email/NINO masking semantics).
+
+      INTENTIONAL DIFF: legacy blocked the fuzzy match on SOUNDEX(surname);
+      DuckDB has no SOUNDEX function, so the blocking key is the upper-cased
+      4-character surname prefix, which keeps the match rate identical on both
+      engines. DQR-014 postcode standardisation uses the converged macro.
+    columns:
+      - name: party_id
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('raw_parties')
+                field: party_id
+      - name: party_canonical_key
+        data_tests:
+          - not_null
+      - name: birth_dt
+        description: DD/MM/YYYY source text parsed to a date.
+        data_tests:
+          - not_null
+      - name: email_dq_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['VALID', 'INVALID']
+      - name: nino_masked
+        description: NINO with the middle five characters masked (null when absent/short).
+      - name: postcode_dq_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['VALID', 'INVALID']
+      - name: apf_customer_id
+        description: APF banking customer id resolved by the crosswalk; null when unmatched.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('raw_customers')
+                field: customer_id
+      - name: match_method
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['LEGACY_XREF', 'APF_EMAIL', 'APF_NAME_DOB', 'UNMATCHED']
+      - name: match_corroborated_flag
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Y', 'N']
+      - name: mdm_cluster_key
+        description: Duplicate-candidate cluster (NINO exact, else surname block + DOB).
+        data_tests:
+          - not_null
+      - name: cluster_size
+        data_tests:
+          - not_null
+      - name: mdm_suspect_queue_flag
+        description: Y for parties with no APF counterpart (legacy MDM_SUSPECT_QUEUE).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Y', 'N']
+
+  - name: stg_informatica_party_match_rate
+    description: >
+      Single-row measurement of the MDM crosswalk match rate for the converged
+      wf_PARTY_MDM_SYNC port, against the legacy reported baseline of 55%.
+      Current sample: legacy 55.00%, converged 55.00%, delta 0.00pp, with 500
+      legacy links corroborated by the converged rules and 1,440 parties in the
+      suspect-queue analogue. See the stg_informatica_party_mdm description for
+      the interpretation.
+    columns:
+      - name: party_cnt
+        data_tests:
+          - not_null
+      - name: legacy_measured_match_rate_pct
+        data_tests:
+          - not_null
+      - name: converged_match_rate_pct
+        data_tests:
+          - not_null
+      - name: match_rate_delta_pct
+        data_tests:
+          - not_null
+
+  - name: stg_informatica_billing_premium_recon
+    description: >
+      Port of Informatica workflow wf_BILLING_PREMIUM_RECON / mapping
+      m_BILLING_PREMIUM_RECON (monthly written vs collected vs earned premium).
+      Reproduces the premium aggregation, LKP_APF_ACCOUNTS across the
+      Teradata / core-banking boundary (orphan APF references are flagged rather
+      than silently dropped to a BAD_APF_MATCH file), EXP_IPT_RECALC and
+      EXP_EARNED_24THS.
+
+      EARNED PREMIUM: consumes the shared earned_premium macro. The legacy
+      figure is produced with method='twenty_fourths' and LABELLED as such in
+      earned_premium_24ths_legacy_gbp / earned_premium_method_label; the
+      canonical straight-line 1/12ths figure is emitted alongside it and the
+      difference is exposed as earned_premium_method_drift_gbp. This is the
+      1/24ths drift counterpart of the estate-wide earned-premium divergence
+      (Finance 1/12ths, Actuarial 365ths, DWH recon 1/24ths) — no figure is
+      silently reconciled.
+
+      SYSDATE is replaced by a deterministic as-at date (var
+      informatica_recon_as_at_dt, default 2026-06-30) so the model is
+      reproducible and testable.
+
+      VALIDATION APPROACH: no GOLDEN.BASELINE fixture exists for the finance
+      recon target, so validation is by DQ tests plus singular tests bounding
+      the earned-premium figures and the IPT recalculation.
+
+      INTENTIONAL DIFF: the legacy IPT rate is hardcoded at 12%
+      (ipt_expected_legacy_gbp is kept for parity); ipt_expected_policy_rate_gbp
+      additionally applies POLICY.IPT_RATE, which the legacy mapping ignored.
+    columns:
+      - name: policy_no
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('raw_policies')
+                field: policy_no
+      - name: as_at_dt
+        data_tests:
+          - not_null
+      - name: written_premium_gbp
+        data_tests:
+          - not_null
+      - name: earned_premium_24ths_legacy_gbp
+        description: Legacy 1/24ths earned premium (NON-CANONICAL method, labelled).
+        data_tests:
+          - not_null
+      - name: earned_premium_canonical_gbp
+        description: Canonical straight-line 1/12ths earned premium.
+        data_tests:
+          - not_null
+      - name: earned_premium_method_drift_gbp
+        description: 1/24ths minus canonical 1/12ths — the measured method drift.
+        data_tests:
+          - not_null
+      - name: earned_premium_method_label
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['EARNED_24THS_LEGACY_DWH_RECON']
+      - name: apf_match_exception_flag
+        description: Y when any premium transaction references an unknown APF account.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Y', 'N']
