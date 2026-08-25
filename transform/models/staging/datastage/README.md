@@ -14,6 +14,20 @@ python3 transform/scripts/datastage/build_datastage_seeds.py
 which also rewrites this workstream's rows in `seeds/parity_allowlist.csv`
 (rows for other golden seeds are preserved untouched).
 
+Building this workstream from a clean state (no credentials needed) requires
+`raw_parties` in the selector: `stg_life_party_resolution` reads the
+foundation party seed, which a path-scoped selector would otherwise leave
+unseeded. From `transform/`:
+
+```bash
+dbt deps
+dbt build --profiles-dir . \
+  --select models/staging/datastage tests/datastage seeds/datastage parity_allowlist raw_parties
+```
+
+Add `-t snowflake` for the warehouse run (`SNOWFLAKE_USER` / `SNOWFLAKE_PASSWORD`
+from the environment only).
+
 ## Part 1 — ported DataStage jobs
 
 | Model | Legacy job / stage |
