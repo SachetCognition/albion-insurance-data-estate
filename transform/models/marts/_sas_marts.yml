@@ -1,0 +1,106 @@
+version: 2
+
+models:
+  - name: sas_reserving_triangles
+    description: >
+      Port of sas/actuarial/06_reserving_triangles.sas — incurred development
+      triangle by product / accident year / development year, built from
+      raw_claims (the DWH copy of CLAIMS_DB.CLAIM).
+
+      Documented differences from the legacy program:
+        * Development period is the claim notification lag
+          (year(notification_dt) - year(loss_dt)). The SAS code used
+          intck('year', LOSS_DATE, today()), which yields exactly one
+          development period per accident year and makes the chain-ladder
+          self-join return zero rows. The legacy value is retained as
+          `legacy_dev_year_as_at` for audit.
+        * Reproducible as-at date from the `reserving_as_at_date` var
+          (default 2026-06-30) instead of today().
+        * Source is raw_policies / raw_claims rather than the separate
+          actuarial mainframe copy ALB.ACT.PLCYMSTR.COPY (CR-2014-311), which
+          is not part of the seeded estate. PRODUCT_CD keeps the legacy
+          substr(POLICY_NO, 5, 3) derivation.
+
+      No GOLDEN baseline seed exists for the actuarial data products (only the
+      SAS premium-finance products were captured), so validation is by
+      structural/actuarial invariants rather than golden_parity: see
+      tests/sas/assert_reserving_triangle_integrity.sql and the column tests
+      below.
+    columns:
+      - name: product_cd
+        data_tests:
+          - not_null
+      - name: accident_year
+        data_tests:
+          - not_null
+      - name: dev_year
+        description: Notification-lag development period, 0-based.
+        data_tests:
+          - not_null
+      - name: legacy_dev_year_as_at
+        description: >
+          Legacy SAS DEV_YEAR (as-at year minus accident year). Audit only.
+      - name: incurred_incremental
+        description: Incurred amount notified in this development period.
+      - name: incurred_cumulative
+        description: Running total of incurred_incremental within the origin period.
+        data_tests:
+          - not_null
+      - name: as_at_date
+        data_tests:
+          - not_null
+
+  - name: sas_reserving_ldf
+    description: >
+      Volume-weighted chain-ladder development factors, one row per product and
+      development period, replicating the SAS `sum(next)/sum(current)`
+      self-join over accident years observable at both periods.
+    columns:
+      - name: product_cd
+        data_tests:
+          - not_null
+      - name: dev_year
+        data_tests:
+          - not_null
+      - name: ldf
+        description: >
+          Volume-weighted link ratio from dev_year to dev_year + 1. Defaults to
+          1 when the denominator is zero.
+        data_tests:
+          - not_null
+
+  - name: sas_reserving_ultimates
+    description: >
+      Chain-ladder ultimates and IBNR by product / accident year, with earned
+      exposure from the CANONICAL shared `earned_premium` macro called with the
+      explicitly labelled non-default variant `method='day_365ths'` — the
+      actuarial 365ths daily pro-rata convention hard-coded in the SAS program.
+      Finance (BTEQ 06) reports 1/12ths and the Informatica recon 1/24ths from
+      the same macro; the three figures differ by design, so the column name
+      carries the convention (`earned_premium_365ths_gbp`).
+
+      Earned premium is bucketed on policy inception year (policy-year basis),
+      the closest available approximation to the accident-year exposure base;
+      the loss ratio is therefore indicative rather than a signed-off actuarial
+      figure.
+    columns:
+      - name: product_cd
+        data_tests:
+          - not_null
+      - name: accident_year
+        data_tests:
+          - not_null
+      - name: cdf_to_ultimate
+        description: >
+          Product of the LDFs from the latest observed development period to
+          ultimate, computed as exp(sum(ln(ldf))). 1 when no further
+          development is observed.
+        data_tests:
+          - not_null
+      - name: ultimate_incurred
+        data_tests:
+          - not_null
+      - name: earned_premium_365ths_gbp
+        description: >
+          Earned premium on the 365ths daily pro-rata (actuarial) convention
+          via earned_premium(..., method='day_365ths').

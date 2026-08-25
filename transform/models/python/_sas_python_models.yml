@@ -1,0 +1,135 @@
+version: 2
+
+models:
+  - name: sas_customer_segments
+    description: >
+      Port of sas/premium_finance/01_sas_customer_segments.sas
+      (PROC STDIZE + PROC FASTCLUS k=5) as a dbt Python model. Runs on
+      pandas/scikit-learn on DuckDB and on Snowpark + the Anaconda
+      scikit-learn build on Snowflake.
+
+      Statistical parity: k-means is initialisation-dependent, so parity with
+      the GOLDEN baseline is asserted with a documented numeric tolerance
+      (scores rounded to 2 dp via round_columns) rather than bit-exact match;
+      see models/python/README.md for the full rationale and the tolerance
+      table. `effective_date` / `load_ts` are run-time stamps and are excluded.
+    data_tests:
+      - golden_parity:
+          arguments:
+            golden_seed: golden_customer_segments
+            key_columns: ['customer_id']
+            exclude_columns: ['load_ts', 'effective_date']
+            round_columns:
+              lifetime_value_score: 2
+              engagement_score: 2
+              product_breadth_index: 2
+              digital_adoption_score: 2
+    columns:
+      - name: customer_id
+        description: Active (CUSTOMER_STATUS='A') customer key.
+        data_tests:
+          - not_null
+          - unique
+      - name: segment_name
+        description: >
+          Business label assigned by descending mean log balance of the
+          cluster, replicating the SAS `order by AVG_BALANCE desc` + _N_ ladder.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - PREMIUM_WEALTH
+                  - ENGAGED_MAINSTREAM
+                  - GROWING_DIGITAL
+                  - CREDIT_DEPENDENT
+                  - VALUE_BASIC
+      - name: segment_id
+        description: >
+          Raw k-means cluster label (0-4). Cluster numbering is arbitrary and
+          engine/library dependent; the stable business identifier is
+          segment_name.
+        data_tests:
+          - not_null
+      - name: lifetime_value_score
+        description: log(balance) * tenure_months * product_breadth * 10, 2 dp.
+      - name: engagement_score
+        description: active accounts / accounts * 100, 2 dp.
+      - name: product_breadth_index
+        description: Share of the four product types held * 100, 2 dp.
+      - name: channel_preference
+        description: >
+          Empty in the legacy program too (enriched later by txn analytics);
+          emitted as NULL.
+
+  - name: sas_customer_risk_scores
+    description: >
+      Port of sas/premium_finance/03_sas_risk_scoring.sas (PROC LOGISTIC +
+      composite scorecard) as a dbt Python model.
+
+      The deterministic scorecard (components, composite, tiers, drivers,
+      flags) reproduces the baseline exactly. The logistic component is
+      replaced by sklearn LogisticRegression with an unpenalised fit; on the
+      migrated data the SAS target DEFAULT_FLAG (PAYMENT_LATE_CNT > 2) has a
+      single class, so the model falls back to the constant probability of
+      default recorded in the baseline (0.05) exactly as the legacy run did.
+      Parity is asserted with a documented tolerance (see
+      models/python/README.md).
+    data_tests:
+      - golden_parity:
+          arguments:
+            golden_seed: golden_customer_risk_scores
+            key_columns: ['customer_id']
+            exclude_columns: ['load_ts', 'effective_date']
+            round_columns:
+              composite_risk_score: 2
+              probability_of_default: 4
+              credit_risk_component: 6
+              behaviour_risk_component: 6
+              velocity_risk_component: 6
+              bureau_score_component: 6
+              payment_history_component: 6
+              score_delta_30d: 2
+    columns:
+      - name: customer_id
+        data_tests:
+          - not_null
+          - unique
+      - name: composite_risk_score
+        description: >
+          0.30*credit + 0.25*behaviour + 0.15*velocity + 0.20*(100-bureau)
+          + 0.10*(100-payment history), 2 dp. Higher = higher risk.
+        data_tests:
+          - not_null
+      - name: risk_tier
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['LOW', 'MODERATE', 'ELEVATED', 'HIGH', 'CRITICAL']
+      - name: probability_of_default
+        description: >
+          Logistic model prediction, 6 dp. Constant 0.05 while the training
+          target is degenerate (no late-payment positives in the migrated
+          data) — identical to the legacy behaviour.
+      - name: primary_risk_driver
+        description: >
+          Largest of the four risk components. Ties promote the later array
+          element, replicating the SAS DO-loop scan observed in the baseline.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - CREDIT_UTILIZATION
+                  - PAYMENT_BEHAVIOUR
+                  - TRANSACTION_VELOCITY
+                  - BUREAU_SCORE
+      - name: secondary_risk_driver
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - CREDIT_UTILIZATION
+                  - PAYMENT_BEHAVIOUR
+                  - TRANSACTION_VELOCITY
+                  - BUREAU_SCORE
