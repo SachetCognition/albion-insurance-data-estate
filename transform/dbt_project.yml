@@ -1,0 +1,61 @@
+name: albion_transform
+version: "1.0.0"
+config-version: 2
+
+profile: albion_transform
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - target
+  - dbt_packages
+
+require-dbt-version: [">=1.10.0", "<2.0.0"]
+
+# ---------------------------------------------------------------------------
+# Layout (Snowflake)                          (DuckDB local equivalent)
+#   RAW.SOURCE       raw source-table seeds     schema raw_source
+#   GOLDEN.BASELINE  immutable "before" seeds   schema golden_baseline
+#   GOLDEN.STAGING   staging models (A/C/D)     schema golden_staging
+#   GOLDEN.DOMAINS   domain models              schema golden_domains
+#   GOLDEN.MARTS     marts / analytics (B)      schema golden_marts
+#
+# Parallel-session ownership (do NOT edit another session's paths):
+#   Session A: models/staging/bteq/
+#   Session B: models/marts/ + models/python/
+#   Session C: models/staging/informatica/
+#   Session D: models/staging/datastage/
+#   Shared macros live in macros/ and are owned by Session 0 (this project).
+# ---------------------------------------------------------------------------
+
+seeds:
+  albion_transform:
+    raw:
+      +database: RAW
+      +schema: SOURCE
+      +tags: ["raw"]
+    golden:
+      +database: GOLDEN
+      +schema: BASELINE
+      +tags: ["golden_baseline"]
+
+models:
+  albion_transform:
+    +database: GOLDEN
+    staging:
+      +schema: STAGING
+      +materialized: table
+    domains:
+      +schema: DOMAINS
+      +materialized: table
+    marts:
+      +schema: MARTS
+      +materialized: table
+    python:
+      +schema: MARTS
+      +materialized: table

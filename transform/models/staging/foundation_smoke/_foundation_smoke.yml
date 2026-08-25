@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: parity_smoke_stg_customer_360
+    description: >
+      Harness smoke check owned by Session 0. Selects the golden baseline
+      verbatim and asserts full row/column parity against itself via the
+      shared golden_parity test, proving seeds, macros, and the parity
+      harness work on both DuckDB and Snowflake.
+    data_tests:
+      - golden_parity:
+          arguments:
+            golden_seed: golden_stg_customer_360
+            key_columns: ['customer_id']
+            exclude_columns: ['load_ts']
+    columns:
+      - name: customer_id
+        data_tests:
+          - not_null
+          - unique

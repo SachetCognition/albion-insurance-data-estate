@@ -1,0 +1,52 @@
+version: 2
+
+seeds:
+  - name: golden_stg_policy_360
+    description: >
+      IMMUTABLE golden "before" baseline for BTEQ 04_stg_policy_360. Generated
+      once by seeds/golden/bteq/generate_bteq_golden_baselines.py, which replays
+      the legacy Teradata SQL verbatim (local DQR-014 postcode variant, inline
+      1/12ths arithmetic) over the raw source seeds at as-at 2026-12-31.
+      data/02_bteq_staging only shipped the three banking BTEQ outputs, so the
+      insurance clones had no frozen baseline. Never rebuilt from the dbt model;
+      used only as the right-hand side of golden_parity tests.
+    config:
+      alias: stg_policy_360
+      column_types:
+        policy_no: varchar
+        party_id: varchar
+        legacy_customer_id: bigint
+        product_cd: varchar
+        channel: varchar
+        inception_dt: date
+        expiry_dt: date
+        policy_status: varchar
+        active_policy_flag: varchar
+        annual_premium_gbp: double
+        earned_premium_mth: double
+        postcode_dq_status: varchar
+        email_dq_status: varchar
+        broker_name: varchar
+        commission_pct: double
+        total_collected_gbp: double
+        last_txn_dt: date
+        load_ts: timestamp
+  - name: golden_stg_earned_premium
+    description: >
+      IMMUTABLE golden "before" baseline for BTEQ 06_stg_earned_premium,
+      generated the same way (see generate_bteq_golden_baselines.py) at as-at
+      2026-12-31, including the quota-share reinsurance cession join.
+    config:
+      alias: stg_earned_premium
+      column_types:
+        policy_no: varchar
+        uw_year: bigint
+        product_cd: varchar
+        gwp: double
+        ipt_amt: double
+        earned_premium: double
+        unearned_premium: double
+        treaty_id: varchar
+        cession_pct: double
+        ceded_premium: double
+        as_at_dt: date

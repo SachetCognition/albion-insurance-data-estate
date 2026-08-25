@@ -1,0 +1,17 @@
+version: 2
+
+seeds:
+  - name: parity_allowlist
+    description: >
+      Allow-list of documented INTENTIONAL parity diffs consumed by the
+      golden_parity test. One row per (golden_seed, key_value). key_value is
+      the pipe-joined key column values of the intentionally-different row.
+      Every row must cite a DQ rule / decision (e.g. DQR-014 converged
+      postcode rule, DQR-052 pivot-year convergence).
+    config:
+      database: GOLDEN
+      schema: BASELINE
+      column_types:
+        golden_seed: varchar
+        key_value: varchar
+        diff_reason: varchar
