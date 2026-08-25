@@ -9,12 +9,12 @@ Both are dbt Python models and run on **both** engines:
 
 | target | runtime | libraries |
 |---|---|---|
-| `duckdb` (default) | local Python process, pandas DataFrames | `pandas`, `numpy`, `scikit-learn` from `requirements.txt` |
+| `duckdb` (default) | local Python process, pandas DataFrames | `pandas`, `numpy` (pulled in by dbt-duckdb) plus `pip install scikit-learn` |
 | `snowflake` | Snowpark stored procedure | same packages resolved from the Snowpark Anaconda channel via `dbt.config(packages=[...])` (`pandas`, `pyarrow`, `numpy`, `scikit-learn`; `pyarrow` is required for `Snowpark.to_pandas()` inside the stored procedure) |
 
 ```bash
 cd transform
-pip install -r requirements.txt          # includes scikit-learn for the local engine
+pip install -r requirements.txt scikit-learn   # scikit-learn is needed by the local engine
 dbt build --select models/python models/marts tests/sas --profiles-dir .
 dbt build --select models/python models/marts tests/sas -t snowflake --profiles-dir .
 ```
