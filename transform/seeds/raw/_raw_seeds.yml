@@ -20,6 +20,14 @@ seeds:
         branch_id: bigint
         created_ts: timestamp
         updated_ts: timestamp
+    columns:
+      - name: account_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        data_tests:
+          - not_null
   - name: raw_addresses
     description: >
       Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
@@ -40,6 +48,14 @@ seeds:
         expiration_date: date
         created_ts: timestamp
         updated_ts: timestamp
+    columns:
+      - name: address_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        data_tests:
+          - not_null
   - name: raw_brokers
     description: >
       Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
@@ -53,6 +69,11 @@ seeds:
         POSTCODE: varchar
         COMMISSION_PCT: double
         STATUS: varchar
+    columns:
+      - name: BROKER_ID
+        data_tests:
+          - unique
+          - not_null
   - name: raw_claims
     description: >
       Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
@@ -72,6 +93,14 @@ seeds:
         FRAUD_FLAG: varchar
         HANDLER_ID: varchar
         SOURCE_SYSTEM: varchar
+    columns:
+      - name: CLAIM_NO
+        data_tests:
+          - unique
+          - not_null
+      - name: POLICY_NO
+        data_tests:
+          - not_null
   - name: raw_customer_bureau_scores
     description: >
       Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
@@ -81,6 +110,16 @@ seeds:
         customer_id: bigint
         external_credit_score: bigint
         report_date: date
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - customer_id
+              - report_date
+    columns:
+      - name: customer_id
+        data_tests:
+          - not_null
   - name: raw_customers
     description: >
       Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
@@ -100,6 +139,11 @@ seeds:
         branch_id: bigint
         created_ts: timestamp
         updated_ts: timestamp
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
   - name: raw_parties
     description: >
       Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
@@ -120,6 +164,11 @@ seeds:
         LEGACY_CUSTOMER_ID: bigint
         MDM_GOLDEN_FLAG: varchar
         CREATE_DT: timestamp
+    columns:
+      - name: PARTY_ID
+        data_tests:
+          - unique
+          - not_null
   - name: raw_policies
     description: >
       Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
@@ -140,6 +189,24 @@ seeds:
         PAYMENT_PLAN: varchar
         UW_YEAR: bigint
         SOURCE_SYSTEM: varchar
+    columns:
+      - name: POLICY_NO
+        data_tests:
+          - unique
+          - not_null
+      - name: PARTY_ID
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('raw_parties')
+                field: PARTY_ID
+      - name: POLICY_STATUS
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['IF', 'RN', 'LP', 'CN', 'EX']
   - name: raw_premium_transactions
     description: >
       Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
@@ -155,6 +222,18 @@ seeds:
         COMMISSION_AMT_GBP: double
         COLLECTION_METHOD: varchar
         APF_ACCOUNT_ID: bigint
+    columns:
+      - name: PREMIUM_TXN_ID
+        data_tests:
+          - unique
+          - not_null
+      - name: POLICY_NO
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('raw_policies')
+                field: POLICY_NO
   - name: raw_reinsurance_treaties
     description: >
       Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
@@ -169,6 +248,11 @@ seeds:
         RETENTION_GBP: bigint
         LIMIT_GBP: bigint
         UW_YEAR: bigint
+    columns:
+      - name: TREATY_ID
+        data_tests:
+          - unique
+          - not_null
   - name: raw_transaction_types
     description: >
       Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
@@ -181,6 +265,11 @@ seeds:
         is_revenue: varchar
         effective_date: date
         expiration_date: date
+    columns:
+      - name: transaction_type_cd
+        data_tests:
+          - unique
+          - not_null
   - name: raw_transactions
     description: >
       Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
@@ -200,3 +289,15 @@ seeds:
         reference_num: varchar
         status_code: varchar
         created_ts: timestamp
+    columns:
+      - name: transaction_id
+        data_tests:
+          - unique
+          - not_null
+      - name: account_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('raw_accounts')
+                field: account_id

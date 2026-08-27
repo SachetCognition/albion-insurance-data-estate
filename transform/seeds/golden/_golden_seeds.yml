@@ -37,6 +37,11 @@ seeds:
         model_version: varchar
         effective_date: date
         load_ts: timestamp with time zone
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
   - name: golden_customer_risk_scores
     description: >
       IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
@@ -60,6 +65,11 @@ seeds:
         model_version: varchar
         effective_date: date
         load_ts: timestamp
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
   - name: golden_customer_segments
     description: >
       IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
@@ -84,6 +94,11 @@ seeds:
         model_version: varchar
         effective_date: date
         load_ts: timestamp
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
   - name: golden_stg_customer_360
     description: >
       IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
@@ -114,6 +129,11 @@ seeds:
         total_credit_limit: double
         credit_utilization_pct: double
         load_ts: timestamp with time zone
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
   - name: golden_stg_risk_factors
     description: >
       IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
@@ -139,6 +159,11 @@ seeds:
         international_txn_cnt: double
         high_risk_merchant_cnt: double
         load_ts: timestamp with time zone
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
   - name: golden_stg_txn_summary
     description: >
       IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
@@ -169,6 +194,19 @@ seeds:
         pct_mobile: double
         days_since_last_txn: bigint
         load_ts: timestamp with time zone
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - customer_id
+              - account_id
+    columns:
+      - name: customer_id
+        data_tests:
+          - not_null
+      - name: account_id
+        data_tests:
+          - not_null
   - name: golden_transaction_analytics
     description: >
       IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
@@ -196,3 +234,8 @@ seeds:
         model_version: varchar
         effective_date: date
         load_ts: timestamp
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
