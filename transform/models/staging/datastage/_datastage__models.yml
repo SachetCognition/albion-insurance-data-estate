@@ -1,0 +1,322 @@
+version: 2
+
+models:
+  - name: stg_ds_transactions
+    description: >
+      Transactions_Fact sequential-file stage of RETAIL_DATA_MART_Job, with
+      record splitting, int conversion and reject handling made explicit.
+      One record of the production file (record_seq 111) carries an unescaped
+      comma inside Description; the legacy stage rejected it silently, so the
+      port flags it as is_rejected instead of dropping it invisibly.
+    columns:
+      - name: record_seq
+        description: 1-based line number in the source sequential file (header = 1).
+        data_tests:
+          - not_null
+          - unique
+      - name: is_rejected
+        description: True when the record does not present the 9 expected delimited fields.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: reject_reason
+        description: Populated only for rejected/unconvertible records.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - FIELD_COUNT_8
+                  - FIELD_COUNT_10
+                  - STOCKID_NOT_NUMERIC
+                  - QUANTITY_NOT_NUMERIC
+                  - INVOICEDATE_NOT_NUMERIC
+                  - PRICE_NOT_NUMERIC
+                  - CUSTOMERID_NOT_NUMERIC
+                  - PRODUCTID_NOT_NUMERIC
+
+  - name: stg_ds_retail_data_mart
+    description: >
+      Port of DataStage job RETAIL_DATA_MART_Job: three inner joins
+      (CustomerID, Stockid, productid), the filter
+      `customertype like "citizen" or customertype like "foriegn"`, and the
+      pass-through transformer that wrote RETAIL_DATA_MART.txt.
+
+      Intentional diff vs the baseline (DS-OVERFLOW-01, 14 records): the
+      legacy links typed InvoiceDate as int32 and saturated those records at
+      2147483647. The port keeps the source value as bigint; the 14 records
+      are allow-listed in seeds/parity_allowlist.csv.
+    data_tests:
+      - golden_parity:
+          arguments:
+            golden_seed: golden_ds_retail_data_mart
+            key_columns: ['stockid', 'invoiceid', 'customerid', 'productid']
+    columns:
+      - name: customerid
+        data_tests:
+          - not_null
+      - name: stockid
+        data_tests:
+          - not_null
+      - name: productid
+        data_tests:
+          - not_null
+      - name: invoiceid
+        data_tests:
+          - not_null
+      - name: customertype
+        description: Only the two legacy filter values survive the port.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['citizen', 'foriegn']
+      - name: gender
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Male', 'Female']
+
+  - name: stg_ds_customer_transaction_counts
+    description: >
+      Port of DataStage job Count_Customer_Transactions_Job (PxAggregator,
+      -key CustomerID -key Stockid, count -> total_orders_num).
+    data_tests:
+      - golden_parity:
+          arguments:
+            golden_seed: golden_ds_count_customer_transactions
+            key_columns: ['customerid', 'stockid']
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['customerid', 'stockid']
+    columns:
+      - name: customerid
+        data_tests:
+          - not_null
+      - name: stockid
+        data_tests:
+          - not_null
+      - name: total_orders_num
+        data_tests:
+          - not_null
+
+  - name: stg_life_policy_landing
+    description: >
+      RECONSTRUCTED column-import stage of the lost DataStage job
+      LIFE_POLICY_LOAD: FD-010 POLMSTEX fixed-width -> the columns of
+      LIFE_DB.LIFE_POLICY. Recovery assumptions: 116-byte records at the
+      FD-010 positions; SUMASSURED/MODALPREM 13.2 with implied decimals;
+      dates land as INTEGER YYMMDD with no century logic, per the landing DDL.
+    columns:
+      - name: life_policy_id
+        description: 12-char 'PM'-prefixed life policy id; the 5th identifier scheme in the estate.
+        data_tests:
+          - not_null
+          - unique
+      - name: record_length
+        description: Every FD-010 record must be exactly 116 bytes.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [116]
+      - name: contract_status
+        description: LIFE400 contract status domain; does not align to the P&C status domain.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['PE', 'AC', 'GR', 'LA', 'RS', 'CL', 'TE', 'RJ']
+      - name: gender
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['M', 'F']
+      - name: pay_freq
+        description: Payments per annum, per FD-010 (01/04/12).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 4, 12]
+      - name: insured_dob_yymmdd
+        data_tests:
+          - not_null
+      - name: process_dt_yymmdd
+        data_tests:
+          - not_null
+      - name: sum_assured
+        data_tests:
+          - not_null
+      - name: modal_premium
+        data_tests:
+          - not_null
+
+  - name: stg_life_policy
+    description: >
+      RECONSTRUCTED LIFE_POLICY_LOAD business layer: LIFE_DB.LIFE_POLICY plus
+      the LIFE_DB.V_LIFE_POLICY derivations, with the canonical DQR-052 pivot
+      (50, from the shared julian_to_date macro) replacing the legacy LIFE400
+      pivot 40. Both centuries are exposed with a diff flag.
+
+      Parity is measured against golden_ds_life_policy_recon, an independent
+      pivot-40 reconstruction of the legacy behaviour rather than a captured
+      legacy output (the job export and its Teradata target are both gone).
+      The 84 policies with two-digit DOB years 40-50 are allow-listed
+      intentional diffs (DQR-052).
+    data_tests:
+      - golden_parity:
+          arguments:
+            golden_seed: golden_ds_life_policy_recon
+            key_columns: ['life_policy_id']
+    columns:
+      - name: life_policy_id
+        data_tests:
+          - not_null
+          - unique
+      - name: insured_dob_ccyymmdd
+        description: Canonical (pivot 50) 8-digit DOB.
+        data_tests:
+          - not_null
+      - name: insured_dob_ccyymmdd_legacy_pivot40
+        description: Legacy V_LIFE_POLICY (pivot 40) 8-digit DOB, kept for reconciliation.
+        data_tests:
+          - not_null
+      - name: dob_pivot_diff_flag
+        description: True where the canonical pivot changes the century (two-digit year 40-50).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: annualised_premium_in_force
+        description: MODAL_PREMIUM * PAY_FREQ, the life book's premium measure per V_LIFE_POLICY.
+        data_tests:
+          - not_null
+      - name: matched_party_id
+        description: >
+          Only ever populated from auto-accepted deterministic matches in
+          stg_life_party_resolution. The legacy in-job name+DOB fuzzy match
+          is not reproducible (no crosswalk, threshold or suspect queue
+          survived), so it is never guessed here.
+
+  - name: stg_life_party_resolution
+    description: >
+      Party-resolution backfill for the keyless life book. Deterministic
+      tiers (T1 name+DOB, T2 surname+DOB, T3 unique LEGACY_PAS CLIENT_NO)
+      replace the lost in-job fuzzy match; ambiguous candidates go to a
+      suspect queue instead of being auto-accepted. The canonical key comes
+      from the shared party_canonical_key macro (PARTY > LEGACY > APF >
+      LIFE400 > MKTG > NINO).
+
+      On the feeds available today no tier resolves uniquely: 127 policies
+      have surname candidates on FD-001 but never a single CLIENT_NO, and no
+      party name+DOB or surname+DOB pair matches at all, so the whole book
+      stays unresolved. That is a quantified statement of the gap - the
+      AS/400 CLNTMST client master would slot in ahead of T1.
+    columns:
+      - name: life_policy_id
+        data_tests:
+          - not_null
+          - unique
+      - name: match_tier
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - T1_NAME_DOB
+                  - T2_SURNAME_DOB
+                  - T3_CLIENT_NO
+                  - SUSPECT_NAME_DOB_AMBIGUOUS
+                  - SUSPECT_SURNAME_DOB_AMBIGUOUS
+                  - SUSPECT_CLIENT_NO_AMBIGUOUS
+                  - NO_CANDIDATE
+      - name: is_auto_accepted
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: is_suspect_queue
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: party_canonical_key
+        description: >
+          Scheme-prefixed canonical key from the shared macro; null while a
+          policy is unresolved (no identifier of any scheme is available on
+          FD-010 itself).
+
+  - name: stg_life_plcymstr_client
+    description: >
+      FD-001 (PLCYMSTR) client/address attributes, parsed as the only
+      surviving UK postcode source for the life book. Applies the canonical
+      DQR-014 standardisation (the feed has no embedded space and only a
+      first-char-alpha COBOL check, PR4471) and the canonical DQR-052 Julian
+      conversion for INCEPT_DT.
+    columns:
+      - name: record_seq
+        data_tests:
+          - not_null
+          - unique
+      - name: client_no
+        description: LEGACY_PAS client number; not a PARTY_ID.
+        data_tests:
+          - not_null
+      - name: postcode
+        description: DQR-014 standardised postcode ('OUTWARD INWARD').
+        data_tests:
+          - not_null
+      - name: is_valid_postcode
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: inception_dt
+        description: INCEPT_DT converted with the shared julian_to_date macro (pivot 50).
+        data_tests:
+          - not_null
+      - name: annual_premium
+        data_tests:
+          - not_null
+
+  - name: stg_life_address_repatriation
+    description: >
+      ADDRMST repatriation target for the life book.
+
+      The AS/400 ADDRMST correspondence addresses were descoped from the 2016
+      integration and never migrated, and no ADDRMST extract exists in this
+      estate (LIFEXTR.clle states "NO ADDRESS/POSTCODE DATA"), so nothing can
+      be repatriated from ADDRMST today. This model stands the target up and
+      populates it with the best available substitute - the DQR-014
+      standardised FD-001 postcodes of the surname candidates - each row
+      labelled with its provenance and with is_loadable, which is only true
+      when the underlying party match was auto-accepted. When ADDRMST is
+      recovered it becomes a union branch with address_source
+      'ADDRMST_AS400' and takes precedence.
+    columns:
+      - name: life_policy_id
+        data_tests:
+          - not_null
+      - name: address_source
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['PLCYMSTR_FD001_CANDIDATE', 'ADDRMST_AS400']
+      - name: postcode
+        description: DQR-014 standardised postcode from the shared macro.
+        data_tests:
+          - not_null
+      - name: is_loadable
+        description: True only for auto-accepted matches with a valid postcode.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
