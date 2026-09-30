@@ -1,0 +1,28 @@
+# https://docs.devin.ai/onboard-devin/environment-yaml
+# One-time setup (e.g., install system tools, global CLIs).
+initialize: |
+  echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $ENVRC
+# Install project dependencies (runs during builds, surfaced to agent at session start).
+maintenance: |
+  POM=""
+  for c in "$HOME/repos/albion-insurance-data-estate/api/pom.xml" "$PWD/api/pom.xml"; do
+    if [ -f "$c" ]; then POM="$c"; break; fi
+  done
+  if [ -n "$POM" ]; then
+    mvn -B -f "$POM" \
+      -Dmaven.wagon.http.retryHandler.count=5 \
+      -Dmaven.wagon.httpconnectionManager.ttlSeconds=60 \
+      org.apache.maven.plugins:maven-dependency-plugin:3.6.1:go-offline
+  else
+    echo "No api/pom.xml on the checked-out branch; skipping Maven dependency prefetch."
+  fi
+knowledge:
+  - name: test
+    contents: |
+      mvn -f api/pom.xml verify
+  - name: startup
+    contents: |
+      java -jar api/target/albion-consumer-api-1.0.0.jar  # run from repo root; dashboard at http://localhost:8080/
+  - name: notes
+    contents: |
+      The api/ service reads fixture JSON from contracts/fixtures (albion.datasource=fixtures).
