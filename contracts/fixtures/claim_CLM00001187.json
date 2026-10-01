@@ -1,0 +1,10 @@
+{
+  "claimId": "CLM00001187",
+  "policyId": "ALB-PET-0000001",
+  "lossDate": "2023-07-01",
+  "notifiedDate": "2023-08-15",
+  "status": "OPEN",
+  "incurredGbp": "78107.93",
+  "paidGbp": "5663.06",
+  "fraudFlag": "SUSPECTED"
+}

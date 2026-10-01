@@ -1,0 +1,6 @@
+feed,source_rows,loaded_rows,rejected_rows,warning_rows,warning_reasons,reject_reasons
+data/01_source_tables/policies.csv,5200,5200,0,0,{},{}
+PLCYMSTR_D260115.dat,600,600,0,526,"{""DQR-041_UNMATCHED_CLIENT_NO_FALLBACK_SOURCE_PARTY"": 526}",{}
+POLMSTEX_D260115.dat,420,420,0,0,{},{}
+data/01_source_tables/claims.csv,1600,1600,0,0,{},{}
+CLAIMS_BDX_BRK0007_202606.csv,45,45,0,0,{},{}
