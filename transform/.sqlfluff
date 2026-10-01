@@ -1,0 +1,20 @@
+[sqlfluff]
+dialect = snowflake
+templater = dbt
+max_line_length = 120
+exclude_rules = ST06, AM04
+
+
+[sqlfluff:indentation]
+indented_joins = false
+tab_space_size = 4
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = lower
+
+[sqlfluff:templater:dbt]
+project_dir = .
+profiles_dir = .
