@@ -1,0 +1,31 @@
+# Two targets:
+#   duckdb    (default) — free local/CI engine, zero credentials required.
+#   snowflake           — live instance, all connection details via env vars.
+#
+# SECURITY: no credentials are ever hardcoded here. Snowflake auth comes from
+# env vars (see .env.example). Key-pair auth is preferred: set
+# SNOWFLAKE_PRIVATE_KEY_PATH (and optionally SNOWFLAKE_PRIVATE_KEY_PASSPHRASE);
+# otherwise SNOWFLAKE_PASSWORD is used.
+
+albion_transform:
+  target: duckdb
+  outputs:
+    duckdb:
+      type: duckdb
+      path: albion.duckdb
+      threads: 4
+
+    snowflake:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'tojgonb-sf03144') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      # key-pair auth wins when SNOWFLAKE_PRIVATE_KEY_PATH is set; otherwise
+      # SNOWFLAKE_PASSWORD is used (empty values are ignored by dbt-snowflake)
+      private_key_path: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '') | default(none, true) }}"
+      private_key_passphrase: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') | default(none, true) }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD', '') | default(none, true) }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'TRANSFORMER') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'TRANSFORM_WH') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'GOLDEN') }}"
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'STAGING') }}"
+      threads: 4

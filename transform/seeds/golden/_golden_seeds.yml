@@ -1,0 +1,198 @@
+version: 2
+
+seeds:
+  - name: golden_customer_master_profile
+    description: >
+      IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
+    config:
+      alias: customer_master_profile
+      column_types:
+        customer_id: bigint
+        full_name: varchar
+        age: bigint
+        state_code: varchar
+        customer_since: date
+        tenure_months: bigint
+        customer_status: varchar
+        segment_name: varchar
+        lifetime_value_score: double
+        engagement_score: double
+        total_accounts: bigint
+        active_accounts: double
+        total_balance: double
+        total_credit_limit: double
+        credit_utilization_pct: double
+        monthly_transactions: bigint
+        monthly_spend: double
+        net_cash_flow: double
+        top_spend_category: varchar
+        digital_txn_pct: double
+        composite_risk_score: double
+        risk_tier: varchar
+        probability_of_default: double
+        watch_list_flag: varchar
+        cross_sell_flag: varchar
+        upsell_flag: varchar
+        retention_risk_flag: varchar
+        model_version: varchar
+        effective_date: date
+        load_ts: timestamp with time zone
+  - name: golden_customer_risk_scores
+    description: >
+      IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
+    config:
+      alias: customer_risk_scores
+      column_types:
+        customer_id: bigint
+        composite_risk_score: double
+        risk_tier: varchar
+        probability_of_default: double
+        credit_risk_component: double
+        behaviour_risk_component: double
+        velocity_risk_component: double
+        bureau_score_component: double
+        payment_history_component: double
+        primary_risk_driver: varchar
+        secondary_risk_driver: varchar
+        score_delta_30d: double
+        watch_list_flag: varchar
+        review_required_flag: varchar
+        model_version: varchar
+        effective_date: date
+        load_ts: timestamp
+  - name: golden_customer_segments
+    description: >
+      IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
+    config:
+      alias: customer_segments
+      column_types:
+        customer_id: bigint
+        segment_name: varchar
+        segment_id: bigint
+        subsegment_id: bigint
+        lifetime_value_score: double
+        engagement_score: double
+        digital_adoption_score: double
+        product_breadth_index: double
+        tenure_group: varchar
+        age_group: varchar
+        balance_tier: varchar
+        channel_preference: varchar
+        cross_sell_flag: varchar
+        upsell_flag: varchar
+        retention_risk_flag: varchar
+        model_version: varchar
+        effective_date: date
+        load_ts: timestamp
+  - name: golden_stg_customer_360
+    description: >
+      IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
+    config:
+      alias: stg_customer_360
+      column_types:
+        customer_id: bigint
+        first_name: varchar
+        last_name: varchar
+        date_of_birth: date
+        age: bigint
+        customer_since: date
+        tenure_months: bigint
+        customer_status: varchar
+        segment_code: varchar
+        branch_id: bigint
+        primary_address: varchar
+        city: varchar
+        state_code: varchar
+        zip_code: varchar
+        num_accounts: bigint
+        num_active_accounts: double
+        has_checking: varchar
+        has_savings: varchar
+        has_credit: varchar
+        has_loan: varchar
+        total_balance: double
+        total_credit_limit: double
+        credit_utilization_pct: double
+        load_ts: timestamp with time zone
+  - name: golden_stg_risk_factors
+    description: >
+      IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
+    config:
+      alias: stg_risk_factors
+      column_types:
+        customer_id: bigint
+        account_overdraft_cnt: double
+        nsf_fee_total: double
+        large_withdrawal_cnt: bigint
+        large_withdrawal_amt: double
+        avg_daily_balance_30d: double
+        avg_daily_balance_90d: double
+        balance_volatility: double
+        credit_util_ratio: double
+        payment_ontime_pct: double
+        payment_late_cnt: double
+        months_since_last_late: bigint
+        external_credit_score: bigint
+        debit_velocity_7d: double
+        debit_velocity_30d: double
+        new_merchant_cnt_30d: bigint
+        international_txn_cnt: double
+        high_risk_merchant_cnt: double
+        load_ts: timestamp with time zone
+  - name: golden_stg_txn_summary
+    description: >
+      IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
+    config:
+      alias: stg_txn_summary
+      column_types:
+        customer_id: bigint
+        account_id: bigint
+        account_type: varchar
+        summary_period_start: date
+        summary_period_end: date
+        txn_count_total: bigint
+        txn_count_debit: double
+        txn_count_credit: double
+        txn_count_fee: double
+        amt_total_debit: double
+        amt_total_credit: double
+        amt_total_fees: double
+        amt_avg_debit: double
+        amt_avg_credit: double
+        amt_max_single_debit: double
+        amt_max_single_credit: double
+        distinct_merchants: bigint
+        top_merchant_category: varchar
+        pct_atm: double
+        pct_pos: double
+        pct_web: double
+        pct_mobile: double
+        days_since_last_txn: bigint
+        load_ts: timestamp with time zone
+  - name: golden_transaction_analytics
+    description: >
+      IMMUTABLE golden "before" baseline seeded from the legacy pipeline output. Never rebuilt; used only as the right-hand side of golden_parity tests.
+    config:
+      alias: transaction_analytics
+      column_types:
+        customer_id: bigint
+        total_accounts: bigint
+        active_accounts: bigint
+        total_transactions: bigint
+        total_debit_amt: double
+        total_credit_amt: double
+        total_fees: double
+        top_spend_category: varchar
+        net_cash_flow: double
+        avg_transaction_size: double
+        digital_txn_pct: double
+        monthly_spend_trend: varchar
+        fee_income: double
+        interest_income: double
+        revenue_contribution: double
+        spend_percentile: double
+        anomaly_flag: varchar
+        reporting_period: varchar
+        model_version: varchar
+        effective_date: date
+        load_ts: timestamp

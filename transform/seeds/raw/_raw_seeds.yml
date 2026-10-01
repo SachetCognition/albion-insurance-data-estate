@@ -1,0 +1,202 @@
+version: 2
+
+seeds:
+  - name: raw_accounts
+    description: >
+      Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
+    config:
+      alias: accounts
+      column_types:
+        account_id: bigint
+        customer_id: bigint
+        account_type: varchar
+        account_status: varchar
+        open_date: date
+        close_date: date
+        current_balance: double
+        available_balance: double
+        credit_limit: double
+        interest_rate: double
+        branch_id: bigint
+        created_ts: timestamp
+        updated_ts: timestamp
+  - name: raw_addresses
+    description: >
+      Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
+    config:
+      alias: addresses
+      column_types:
+        address_id: bigint
+        customer_id: bigint
+        address_type: varchar
+        address_line_1: varchar
+        address_line_2: varchar
+        city: varchar
+        state_code: varchar
+        zip_code: varchar
+        country_code: varchar
+        is_primary: varchar
+        effective_date: date
+        expiration_date: date
+        created_ts: timestamp
+        updated_ts: timestamp
+  - name: raw_brokers
+    description: >
+      Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
+    config:
+      alias: brokers
+      column_types:
+        BROKER_ID: varchar
+        BROKER_NAME: varchar
+        FCA_REF: bigint
+        CITY: varchar
+        POSTCODE: varchar
+        COMMISSION_PCT: double
+        STATUS: varchar
+  - name: raw_claims
+    description: >
+      Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
+    config:
+      alias: claims
+      column_types:
+        CLAIM_NO: varchar
+        POLICY_NO: varchar
+        CLAIMANT_PARTY_ID: varchar
+        LOSS_DT: varchar
+        NOTIFICATION_DT: timestamp
+        CAUSE_CD: varchar
+        CLAIM_STATUS: varchar
+        INCURRED_AMT: double
+        PAID_AMT: double
+        OUTSTANDING_RESERVE: double
+        FRAUD_FLAG: varchar
+        HANDLER_ID: varchar
+        SOURCE_SYSTEM: varchar
+  - name: raw_customer_bureau_scores
+    description: >
+      Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
+    config:
+      alias: customer_bureau_scores
+      column_types:
+        customer_id: bigint
+        external_credit_score: bigint
+        report_date: date
+  - name: raw_customers
+    description: >
+      Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
+    config:
+      alias: customers
+      column_types:
+        customer_id: bigint
+        first_name: varchar
+        last_name: varchar
+        date_of_birth: date
+        ssn_hash: varchar
+        email: varchar
+        phone_primary: varchar
+        customer_since: date
+        customer_status: varchar
+        segment_code: varchar
+        branch_id: bigint
+        created_ts: timestamp
+        updated_ts: timestamp
+  - name: raw_parties
+    description: >
+      Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
+    config:
+      alias: parties
+      column_types:
+        PARTY_ID: varchar
+        PARTY_TYPE: varchar
+        FIRST_NAME: varchar
+        LAST_NAME: varchar
+        BIRTH_DT: varchar
+        NINO: varchar
+        EMAIL_ADDR: varchar
+        PHONE: varchar
+        ADDR_LINE1: varchar
+        CITY: varchar
+        POSTCODE: varchar
+        LEGACY_CUSTOMER_ID: bigint
+        MDM_GOLDEN_FLAG: varchar
+        CREATE_DT: timestamp
+  - name: raw_policies
+    description: >
+      Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
+    config:
+      alias: policies
+      column_types:
+        POLICY_NO: varchar
+        PARTY_ID: varchar
+        PRODUCT_CD: varchar
+        PRODUCT_NAME: varchar
+        BROKER_ID: varchar
+        CHANNEL: varchar
+        INCEPTION_DT: date
+        EXPIRY_DT: date
+        POLICY_STATUS: varchar
+        ANNUAL_PREMIUM_GBP: double
+        IPT_RATE: double
+        PAYMENT_PLAN: varchar
+        UW_YEAR: bigint
+        SOURCE_SYSTEM: varchar
+  - name: raw_premium_transactions
+    description: >
+      Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
+    config:
+      alias: premium_transactions
+      column_types:
+        PREMIUM_TXN_ID: bigint
+        POLICY_NO: varchar
+        TXN_TYPE: varchar
+        TXN_DT: date
+        GROSS_AMT_GBP: double
+        IPT_AMT_GBP: double
+        COMMISSION_AMT_GBP: double
+        COLLECTION_METHOD: varchar
+        APF_ACCOUNT_ID: bigint
+  - name: raw_reinsurance_treaties
+    description: >
+      Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
+    config:
+      alias: reinsurance_treaties
+      column_types:
+        TREATY_ID: varchar
+        TREATY_TYPE: varchar
+        LINE_OF_BUSINESS: varchar
+        REINSURER: varchar
+        CESSION_PCT: double
+        RETENTION_GBP: bigint
+        LIMIT_GBP: bigint
+        UW_YEAR: bigint
+  - name: raw_transaction_types
+    description: >
+      Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
+    config:
+      alias: transaction_types
+      column_types:
+        transaction_type_cd: varchar
+        description: varchar
+        category: varchar
+        is_revenue: varchar
+        effective_date: date
+        expiration_date: date
+  - name: raw_transactions
+    description: >
+      Raw source table seeded verbatim from data/01_source_tables. Immutable input for staging models.
+    config:
+      alias: transactions
+      column_types:
+        transaction_id: bigint
+        account_id: bigint
+        transaction_type_cd: varchar
+        transaction_date: date
+        transaction_ts: timestamp
+        amount: double
+        running_balance: double
+        merchant_name: varchar
+        merchant_category: varchar
+        channel_code: varchar
+        reference_num: varchar
+        status_code: varchar
+        created_ts: timestamp
