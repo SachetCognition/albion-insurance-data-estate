@@ -1,0 +1,8 @@
+rule_id,rule_name,status,owner,registered_count,actual_count,undercount,implementations_actual,evidence
+DQR-007,Email format valid,ACTIVE,Data Governance,1,3,2,"Informatica EXP_EMAIL_DQ (regex, lowercased); BTEQ 04_stg_policy_360 (contains '@' only); APF banking pipeline (none)",dq_rules/dq_rules_registry.csv:2
+DQR-014,UK postcode valid,ACTIVE,Data Governance,2,5,3,"Informatica variant A (auto-repairs space then regex); BTEQ variant (requires space, first-char alpha); SAS check_uk_postcode.sas (case-sensitive regex, NEVER REGISTERED); COBOL PLCYMSTR 88-level (first char alpha only, PR4471); LIFE400 (NO postcode field - addresses stranded in AS/400 ADDRMST, variant 5)",dq_rules/dq_rules_registry.csv:3
+DQR-021,NINO masked in analytical stores,PARTIAL,DPO,1,2,1,"Informatica EXP_NINO_MASK (marts only); SAS mask_nino.sas (output only - fraud pipeline joins on raw NINO, accepted risk AR-118)",dq_rules/dq_rules_registry.csv:4
+DQR-030,Policy status domain,DRAFT,Data Governance,0,1,1,"LEGACY_PAS emits retired codes CAR/HSE product + occasional status 'PD' (paid-up, life legacy) - dropped silently by SQ filter",dq_rules/dq_rules_registry.csv:5
+DQR-033,Loss date not in future,SUSPENDED,Claims MI,1,0,0,none active,dq_rules/dq_rules_registry.csv:6
+DQR-041,Party duplicate check,ACTIVE,MDM team,1,4,3,"match rate ~55%; 41k unworked suspects in MDM_SUSPECT_QUEUE; life book matched by name+DOB fuzzy only (DataStage job, source lost); MKTG_CUST_ID never crosswalked",dq_rules/dq_rules_registry.csv:7
+DQR-052,Date century derivation consistent,DRAFT,Data Governance,0,3,3,Informatica pivot 49; SAS julian_to_date pivot 50; LIFE400/DataStage/V_LIFE_POLICY pivot 40,dq_rules/dq_rules_registry.csv:8

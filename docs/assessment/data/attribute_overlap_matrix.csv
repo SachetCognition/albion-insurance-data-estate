@@ -1,0 +1,46 @@
+canonical_attribute,canonical_target,producing_system,physical_name,physical_format,derivation,evidence
+Party / person identifier,"party_key (surrogate, resolved)",APF core banking (BTEQ 01),CUSTOMER_ID,INTEGER,Source system key,teradata/bteq/01_stg_customer_360.bteq:27
+Party / person identifier,"party_key (surrogate, resolved)",POLARIS PAS (Teradata),PARTY_ID,"CHAR(8), 'P' + 7 digits",Source system key,teradata/ddl/03_insurance_source_tables.sql:12
+Party / person identifier,"party_key (surrogate, resolved)",LEGACY_PAS (mainframe),CLIENT_NO,"PIC 9(10), zero padded",Crosswalk via XREF_CLIENT_PARTY,mainframe/copybooks/PLCYMSTR.cpy:11
+Party / person identifier,"party_key (surrogate, resolved)",LIFE400 (AS/400),— none —,INSNAME free text + DOB,name+DOB fuzzy match in lost-source job,as400_life/feed_specs/POLMSTEX_feed_spec.md:16
+Party / person identifier,"party_key (surrogate, resolved)",Partner loyalty (DataStage),MKTG_CUST_ID,5-digit partner-issued,Never crosswalked; name+email dedupe,datastage/README.md:19
+Party / person identifier,"party_key (surrogate, resolved)",SOAP PolicyInquiryService,customer_ref,"VARCHAR, two schemes","NVL(legacy_customer_id, party_id)",api_legacy/plsql/pkg_policy_inquiry.sql:19
+Policy number,policy_number (ALB-XXX-9999999),POLARIS PAS,POLICY_NO,VARCHAR(18) ALB-XXX-9999999,Source system key,teradata/ddl/03_insurance_source_tables.sql:30
+Policy number,policy_number (ALB-XXX-9999999),LEGACY_PAS extract,PLCY-POLICY-NO,"PIC X(18), hyphens stripped",Fixed-width position 1-18,mainframe/feed_specs/PLCYMSTR_feed_spec.md:15
+Policy number,policy_number (ALB-XXX-9999999),Broker bordereaux (Informatica),in_POLICY_REF,AL/MOT/9999999,"REPLACESTR 'AL/'->'ALB-', '/'->'-'",informatica/XML/wf_REINSURANCE_BORDEREAUX_MONTHLY.xml:11
+Policy number,policy_number (ALB-XXX-9999999),SOAP / PL/SQL,p_policy_no,either format,Inline REPLACE re-key (4th implementation),api_legacy/plsql/pkg_policy_inquiry.sql:28
+Policy number,policy_number (ALB-XXX-9999999),LIFE400,LIFE_POLICY_ID / POLID,CHAR(12) 'PM' prefixed,"Separate numbering scheme, no FK",teradata/ddl/04_life_db.sql:5
+Postcode,"postcode (validated, spaced, uppercase)",Informatica wf_POLICY_MASTER_DAILY,POSTCODE_STD / POSTCODE_DQ_STATUS,repaired + uppercased,"DQR-014 variant A: insert space, REG_MATCH",informatica/XML/wf_POLICY_MASTER_DAILY.xml:33
+Postcode,"postcode (validated, spaced, uppercase)",BTEQ 04_stg_policy_360,POSTCODE_DQ_STATUS,as stored,Requires embedded space + first char A-Z,teradata/bteq/04_stg_policy_360.bteq:51
+Postcode,"postcode (validated, spaced, uppercase)",SAS check_uk_postcode.sas,POSTCODE_OK,as stored,Case-sensitive PRX; never registered,sas/macros/check_uk_postcode.sas:6
+Postcode,"postcode (validated, spaced, uppercase)",LEGACY_PAS copybook,PLCY-POSTCODE,"PIC X(08), no space",88-level first-char-alpha only (PR4471),mainframe/copybooks/PLCYMSTR.cpy:30
+Postcode,"postcode (validated, spaced, uppercase)",LIFE400,— none —,n/a,ADDRMST descoped in 2016; addresses never leave the AS/400,as400_life/extracts/LIFEXTR.clle:13
+Loss date,loss_date (DATE),Informatica wf_CLAIMS_FNOL_INTRADAY,out_LOSS_DT,parsed MM/DD/YYYY for Guidewire,"IIF(SOURCE_SYSTEM='GUIDEWIRE_CC', US, UK)",informatica/XML/wf_CLAIMS_FNOL_INTRADAY.xml:12
+Loss date,loss_date (DATE),BTEQ 05_stg_claims_summary,LOSS_DT,parsed DD/MM/YYYY,SUBSTR concatenation to ISO then CAST,teradata/bteq/05_stg_claims_summary.bteq:30
+Loss date,loss_date (DATE),SAS 06_reserving_triangles,LOSS_DATE,ddmmyy10.,"input(c.LOSS_DT, ddmmyy10.)",sas/actuarial/06_reserving_triangles.sas:44
+Loss date,loss_date (DATE),SOAP API,loss_dt,DD/MM/YYYY text,Passed through untyped,api_legacy/plsql/pkg_policy_inquiry.sql:36
+Inception date,inception_date (DATE),Informatica EXP_POLICY_DATES,out_INCEPTION_DT,from Julian YYDDD,Y2K pivot 49,informatica/XML/wf_POLICY_MASTER_DAILY.xml:37
+Inception date,inception_date (DATE),SAS %julian_to_date,INCEPTION_DT,from Julian YYDDD,Y2K pivot 50,sas/macros/julian_to_date.sas:12
+Inception date,inception_date (DATE),LIFE_DB.V_LIFE_POLICY,INSURED_DOB_CCYYMMDD,from YYMMDD integer,Y2K pivot 40,teradata/ddl/04_life_db.sql:22
+Annual / written premium,"gross_written_premium (DECIMAL(12,2) GBP)",POLARIS PAS,ANNUAL_PREMIUM_GBP,"DECIMAL(12,2) GBP",Source value,teradata/ddl/03_insurance_source_tables.sql:39
+Annual / written premium,"gross_written_premium (DECIMAL(12,2) GBP)",LEGACY_PAS copybook,PLCY-ANNL-PREM,PIC 9(09)V99 pence,"Implied decimal, /100 downstream",mainframe/copybooks/PLCYMSTR.cpy:17
+Annual / written premium,"gross_written_premium (DECIMAL(12,2) GBP)",Broker bordereaux,in_AMT_TXT,text with £ and commas,"REPLACECHR CHR(163) and ','",informatica/XML/wf_REINSURANCE_BORDEREAUX_MONTHLY.xml:14
+Annual / written premium,"gross_written_premium (DECIMAL(12,2) GBP)",LIFE400,MODAL_PREMIUM x PAY_FREQ,"DECIMAL(15,2), implied 2dp at source",Annualised Premium In Force — not earned premium,teradata/ddl/04_life_db.sql:25
+Earned premium,"earned_premium (single basis, to be agreed)",BTEQ 06_stg_earned_premium (Finance),EARNED_PREMIUM,"DECIMAL(12,2)",Straight-line 1/12ths,teradata/bteq/06_stg_earned_premium.bteq:6
+Earned premium,"earned_premium (single basis, to be agreed)",Informatica wf_BILLING_PREMIUM_RECON,out_EARNED_PREMIUM_24,"DECIMAL(12,2)","1/24ths, mid-month inception assumption",informatica/XML/wf_BILLING_PREMIUM_RECON.xml:8
+Earned premium,"earned_premium (single basis, to be agreed)",SAS 06_reserving_triangles (Actuarial),EARNED_PREMIUM_365,numeric,Daily 365ths from the separate actuarial feed,sas/actuarial/06_reserving_triangles.sas:32
+Active policy flag,policy_status + policy_state_history (definition per consumer view),Informatica EXP_POLICY_FLAGS (UW),ACTIVE_POLICY_FLAG,Y/N,status IF or RN,informatica/XML/wf_POLICY_MASTER_DAILY.xml:50
+Active policy flag,policy_status + policy_state_history (definition per consumer view),BTEQ 04_stg_policy_360 (Finance),ACTIVE_POLICY_FLAG,Y/N,status IF and collection within 45 days,teradata/bteq/04_stg_policy_360.bteq:35
+Active policy flag,policy_status + policy_state_history (definition per consumer view),Claims MI dashboards,(dashboard-side),n/a,any policy with an OPEN/REOPENED claim,glossary/claims_glossary.md:3
+Active policy flag,policy_status + policy_state_history (definition per consumer view),LIFE400 / Life Ops,CNTRSTS,CHAR(2),"AC, GR or RS",glossary/life_operations_glossary.md:5
+NINO,national_insurance_number (tokenised),POLICY_ADMIN_DB.PARTY,NINO,CHAR(9) unmasked,Stored raw in the operational store,teradata/ddl/03_insurance_source_tables.sql:17
+NINO,national_insurance_number (tokenised),Informatica EXP_NINO_MASK,out_NINO_MASKED,XX*****XX,Masked into the marts only,informatica/XML/wf_PARTY_MDM_SYNC.xml:15
+NINO,national_insurance_number (tokenised),SAS fraud pipeline,NINO / NINO_MASKED,"raw in WORK, masked on output","Raw join, AR-118",sas/claims_fraud/05_claims_fraud_scoring.sas:32
+Fraud flag,fraud_indicator (Y / N / SUSPECTED),CLAIMS_DB.CLAIM (operational),FRAUD_FLAG,CHAR(1) Y/N/blank/S,LEGACY_CLM also sends 'S',teradata/ddl/03_insurance_source_tables.sql:57
+Fraud flag,fraud_indicator (Y / N / SUSPECTED),Informatica EXP_CLAIM_FLAGS,out_FRAUD_FLAG,Y/N,DECODE 'S' -> 'N',informatica/XML/wf_CLAIMS_FNOL_INTRADAY.xml:17
+Fraud flag,fraud_indicator (Y / N / SUSPECTED),BTEQ 05_stg_claims_summary,FRAUD_FLAG_NORM,Y/N,'S' -> 'Y',teradata/bteq/05_stg_claims_summary.bteq:47
+Risk / fraud score,score with explicit scale + model version,SAS 05_claims_fraud_scoring,FRAUD_SCORE,0-1000 integer,"Weighted rules, refer at >= 650",sas/claims_fraud/05_claims_fraud_scoring.sas:80
+Risk / fraud score,score with explicit scale + model version,SAS 03_sas_risk_scoring (banking),PROBABILITY_OF_DEFAULT / COMPOSITE_RISK_SCORE,0-1 probability and 0-100 composite,Logistic model + composite banding,sas/premium_finance/03_sas_risk_scoring.sas:122
+Email,"email_address (lowercased, validated)",Informatica EXP_EMAIL_DQ,out_EMAIL_STD / out_EMAIL_DQ_STATUS,lowercased,"DQR-007 variant B, RFC-ish regex",informatica/XML/wf_PARTY_MDM_SYNC.xml:9
+Email,"email_address (lowercased, validated)",BTEQ 04_stg_policy_360,EMAIL_DQ_STATUS,"as stored, mixed case",POSITION('@') > 0,teradata/bteq/04_stg_policy_360.bteq:59
+Email,"email_address (lowercased, validated)",APF banking pipeline,EMAIL,as stored,No validation at all,dq_rules/dq_rules_registry.csv:2
