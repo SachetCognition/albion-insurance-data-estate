@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: dim_party
+    description: >
+      Canonical party dimension unifying the six identity schemes into one
+      surrogate party_key with source-system lineage. NINO masked (DQR-021).
+    columns:
+      - name: party_key
+        description: "Single canonical surrogate key (DQR-041 dedupe)."
+        tests: [not_null, unique]
+      - name: nino_masked
+        description: "Masked NINO; must never contain an unmasked value (DQR-021/AR-118)."
+        tests:
+          - no_unmasked_nino
+      - name: email
+        tests: [email_format]
+      - name: birth_dt
+        tests: [single_pivot_date]
+
+  - name: dim_policy
+    description: "Canonical policy dimension (P&C + Life) with explicit active variants + one canonical flag."
+    columns:
+      - name: policy_no
+        tests: [not_null, unique]
+      - name: active_policy_flag
+        tests:
+          - not_null:
+              config:
+                where: "policy_domain in ('PC','LIFE')"
+
+  - name: dim_claim
+    columns:
+      - name: claim_no
+        tests: [not_null, unique]
+      - name: loss_dt
+        tests: [single_pivot_date]
+      - name: fraud_flag
+        tests:
+          - accepted_values:
+              values: ['Y', 'N']
+
+  - name: dim_premium
+    columns:
+      - name: premium_txn_id
+        tests: [not_null, unique]
+
+  - name: dim_reinsurance
+    columns:
+      - name: treaty_id
+        tests: [not_null, unique]

@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: mart_earned_premium
+    description: >
+      One canonical earned premium (365ths) + labelled 1/12ths and 1/24ths
+      variant columns for reconciliation.
+    columns:
+      - name: policy_no
+        tests: [not_null, unique]
+      - name: earned_premium
+        description: "Canonical actuarial 365ths."
+        tests: [not_null]
+      - name: sii_line_of_business
+        description: "Single canonical SII LoB mapping (seed sii_lob_map)."
+
+  - name: mart_policy_360
+    description: "Denormalised policy-360; the store the modern API reads from."
+    columns:
+      - name: policy_no
+        tests: [not_null, unique]
+      - name: nino_masked
+        tests: [no_unmasked_nino]
+      - name: postcode
+        tests: [uk_postcode_format]
+      - name: email
+        tests: [email_format]
+
+  - name: mart_claims_summary
+    description: "Claims summary by policy + accident year; canonical fraud flag."
+    columns:
+      - name: fraud_flagged_count
+        tests: [not_null]

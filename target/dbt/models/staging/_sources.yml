@@ -1,0 +1,47 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Raw landing schema. In production these are the replicated operational
+      tables from the legacy Teradata/Oracle/AS-400/mainframe estate. For local
+      and CI runs they are populated by the seeds in target/dbt/seeds/ (see
+      generate_seeds.py), which is why each identifier is the raw_* seed name.
+    database: "{{ env_var('SNOWFLAKE_DATABASE', 'ALBION') }}"
+    schema: raw
+    tables:
+      - name: party
+        identifier: raw_party
+        description: "POLICY_ADMIN_DB.PARTY (POLARIS). See teradata/ddl/03_insurance_source_tables.sql."
+      - name: policy
+        identifier: raw_policy
+        description: "POLICY_ADMIN_DB.POLICY (POLARIS / LEGACY_PAS union)."
+      - name: broker
+        identifier: raw_broker
+        description: "POLICY_ADMIN_DB.BROKER."
+      - name: claim
+        identifier: raw_claim
+        description: "CLAIMS_DB.CLAIM (Guidewire CC + LEGACY_CLM). See FD-003/FD-004."
+      - name: premium_transactions
+        identifier: raw_premium_transactions
+        description: "BILLING_DB.PREMIUM_TRANSACTIONS (FD-007)."
+      - name: treaty
+        identifier: raw_treaty
+        description: "REINSURANCE_DB.TREATY."
+      - name: xref_client_party
+        identifier: raw_xref_client_party
+        description: "REF_DB.XREF_CLIENT_PARTY manual crosswalk (LEGACY_PAS CLIENT_NO -> POLARIS PARTY_ID)."
+      - name: customers
+        identifier: raw_customers
+        description: "CORE_BANKING_DB.CUSTOMERS (APF banking, FD-006)."
+      - name: life_policy
+        identifier: raw_life_policy
+        description: >
+          LIFE_DB.LIFE_POLICY — landed LIFE400 POLMSTEX feed (FD-010) with dates
+          as raw YYMMDD. See teradata/ddl/04_life_db.sql and
+          as400_life/feed_specs/POLMSTEX_feed_spec.md.
+      - name: plcymstr
+        identifier: raw_plcymstr
+        description: >
+          LEGACY_PAS PLCYMSTR fixed-width flat feed (FD-001) parsed to columns.
+          See mainframe/copybooks/PLCYMSTR.cpy and mainframe/feed_specs/PLCYMSTR_feed_spec.md.

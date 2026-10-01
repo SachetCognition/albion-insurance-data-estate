@@ -1,0 +1,92 @@
+version: 2
+
+models:
+  - name: stg_party
+    description: "Staged POLICY_ADMIN_DB.PARTY with canonical date/email/postcode. NINO raw (masked in domain)."
+    columns:
+      - name: party_id
+        tests: [not_null, unique]
+      - name: email
+        description: "Lowercased/trimmed once (DQR-007)."
+        tests:
+          - email_format
+      - name: postcode
+        description: "Standardised once (DQR-014)."
+        tests:
+          - uk_postcode_format
+      - name: birth_dt
+        description: "DD/MM/YYYY text resolved with the single pivot (DQR-052)."
+        tests:
+          - single_pivot_date
+
+  - name: stg_customers
+    columns:
+      - name: customer_id
+        tests: [not_null, unique]
+      - name: email
+        tests: [email_format]
+
+  - name: stg_broker
+    columns:
+      - name: broker_id
+        tests: [not_null, unique]
+      - name: postcode
+        tests: [uk_postcode_format]
+
+  - name: stg_policy
+    description: "Staged POLICY_ADMIN_DB.POLICY (POLARIS + LEGACY_PAS)."
+    columns:
+      - name: policy_no
+        tests: [not_null]
+      - name: policy_status
+        description: "DQR-030 canonical P&C status domain."
+        tests:
+          - accepted_values:
+              values: ['IF', 'RN', 'LP', 'CN', 'EX']
+
+  - name: stg_claim
+    columns:
+      - name: claim_no
+        tests: [not_null, unique]
+      - name: loss_dt
+        tests: [single_pivot_date]
+      - name: fraud_flag
+        description: "Canonical 'S'->'Y' mapping."
+        tests:
+          - accepted_values:
+              values: ['Y', 'N']
+
+  - name: stg_plcymstr
+    description: "Parsed LEGACY_PAS PLCYMSTR flat feed."
+    columns:
+      - name: postcode
+        tests: [uk_postcode_format]
+      - name: inception_dt
+        description: "Julian YYDDD resolved with the single pivot (DQR-052)."
+        tests:
+          - single_pivot_date
+
+  - name: stg_life_policy
+    description: "Staged LIFE400 POLMSTEX feed."
+    columns:
+      - name: life_policy_id
+        tests: [not_null, unique]
+      - name: insured_dob
+        description: "YYMMDD resolved with the single pivot (was pivot-40)."
+        tests:
+          - single_pivot_date
+
+  - name: stg_premium_transactions
+    columns:
+      - name: premium_txn_id
+        tests: [not_null, unique]
+
+  - name: stg_treaty
+    columns:
+      - name: treaty_id
+        tests: [not_null]
+
+  - name: stg_xref_client_party
+    columns:
+      - name: party_id
+        tests: [not_null]
